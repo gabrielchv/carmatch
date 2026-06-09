@@ -1,0 +1,17 @@
+Carmatch is car trading matching website in brazil (ONLY TRADING, NOT JUST SELLING), where any person can enter and find registered cars, and make an offer, offering their car plus or getting a sum of money.
+
+To crete a car post in car match, you have to be registered using oAuth, after, you can register a car by:
+ - placing the your exact car model (model, year, etc..)
+ - place contact info (whatsapp number and/or email)
+ - uploading pictures of the car (1+)
+ - selecting the details of the matching cars you want
+   - brand(s) or specific model(s)
+   - average price
+
+Any person can:
+ - see available offers on the website (traded and expected car)
+ - filter by average price of trade
+ 
+There is the matching system, where:
+ - two car posts (from different people), which match their expectations (e.g: so a person trading a honda fit 2008 for a prius 2009 + 2000k, and a person trading their prius 2009 for a honda fit 2008 - 1000), on the example, the match is not "perfect" in numbers, but it makes sense matching the two, the matching algo should take into account almost perfect matches.
+  - when a match is found, it should be shown on the app for both users that a match was found, and show the matched post.

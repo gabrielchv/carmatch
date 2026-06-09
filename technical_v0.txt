@@ -1,0 +1,3 @@
+the website should be built using nextjs, having a MINIMAL Interface, this is a v0, the focus is only having the elements for testing. The website should have typescript and tailwindcss.  
+
+**No deployment will be performed in this v0 phase. All work is local-only.**
