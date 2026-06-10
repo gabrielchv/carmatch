@@ -16,7 +16,7 @@ export async function createSession(user: User): Promise<void> {
     JSON.stringify({ userId: user.id, name: user.name }),
     {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7, // 1 week
