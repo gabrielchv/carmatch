@@ -1,15 +1,21 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import SearchableSelect, { type SelectOption } from "@/components/SearchableSelect";
+import { parseFipeModels, type VersionOption } from "@/lib/fipe-utils";
 
 interface VehicleRow {
   id: number;
   brandId: string;
   brandLabel: string;
-  modelId: string;
-  modelLabel: string;
+  // Modelo geral (primeira palavra FIPE, ex: "Fit")
+  generalModel: string;
+  // Versão específica (ex: "CX 1.4 Flex 16V 5p")
+  version: string;
+  versionLabel: string;
+  // Transmissão
+  transmission: string;
   yearMin: string;
   yearMax: string;
   cashAdj: string;
@@ -23,8 +29,10 @@ function freshRow(): VehicleRow {
     id: ++rowId,
     brandId: "",
     brandLabel: "",
-    modelId: "",
-    modelLabel: "",
+    generalModel: "",
+    version: "",
+    versionLabel: "",
+    transmission: "",
     yearMin: "",
     yearMax: "",
     cashAdj: "0",
@@ -32,24 +40,26 @@ function freshRow(): VehicleRow {
   };
 }
 
+// Cache de dados FIPE parseados por brandId
+const fipeParsedCache = new Map<string, ReturnType<typeof parseFipeModels>>();
+
 export default function PostForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // ───── FIPE brands (global, carregado uma vez) ─────
+  // ───── FIPE brands (global) ─────
   const [brands, setBrands] = useState<SelectOption[]>([]);
   const [brandsLoading, setBrandsLoading] = useState(true);
 
-  // ───── Meu Carro (cascata FIPE) ─────
+  // ───── Meu Carro ─────
   const [myBrandId, setMyBrandId] = useState("");
   const [myBrandLabel, setMyBrandLabel] = useState("");
   const [myModelId, setMyModelId] = useState("");
   const [myModelLabel, setMyModelLabel] = useState("");
   const [myYearCode, setMyYearCode] = useState("");
-  const [myYearLabel, setMyYearLabel] = useState("");
-  const [myYearNumber, setMyYearNumber] = useState(""); // extraído do AnoModelo
+  const [myYearNumber, setMyYearNumber] = useState("");
 
   const [myModels, setMyModels] = useState<SelectOption[]>([]);
   const [myModelsLoading, setMyModelsLoading] = useState(false);
@@ -61,11 +71,16 @@ export default function PostForm() {
 
   // ───── Veículos desejados ─────
   const [rows, setRows] = useState<VehicleRow[]>([freshRow()]);
-  const [rowModels, setRowModels] = useState<Record<number, SelectOption[]>>({});
-  const [rowModelsLoading, setRowModelsLoading] = useState<Record<number, boolean>>({});
+
+  // Dados FIPE parseados por rowId: { generalModels, versionsByGeneralModel }
+  const [rowParsed, setRowParsed] = useState<
+    Record<number, { generalModels: string[]; versionsByGeneralModel: Record<string, VersionOption[]> }>
+  >({});
+  const [rowParsedLoading, setRowParsedLoading] = useState<Record<number, boolean>>({});
+  const loadingRef = useRef<Record<number, boolean>>({});
 
   // ================================================================
-  // BRANDS – carrega uma vez
+  // BRANDS
   // ================================================================
   useEffect(() => {
     fetch("/api/fipe/brands")
@@ -83,8 +98,6 @@ export default function PostForm() {
   // ================================================================
   // MEU CARRO – cascata
   // ================================================================
-
-  // Quando marca do meu carro muda → carrega modelos
   useEffect(() => {
     if (!myBrandId) {
       setMyModels([]);
@@ -92,7 +105,6 @@ export default function PostForm() {
       setMyModelLabel("");
       setMyYears([]);
       setMyYearCode("");
-      setMyYearLabel("");
       setMyYearNumber("");
       if (!myEstimatedValueEdited) setMyEstimatedValue("");
       return;
@@ -102,7 +114,6 @@ export default function PostForm() {
     setMyModelLabel("");
     setMyYears([]);
     setMyYearCode("");
-    setMyYearLabel("");
     setMyYearNumber("");
     if (!myEstimatedValueEdited) setMyEstimatedValue("");
 
@@ -114,19 +125,16 @@ export default function PostForm() {
       .finally(() => setMyModelsLoading(false));
   }, [myBrandId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Quando modelo do meu carro muda → carrega anos
   useEffect(() => {
     if (!myBrandId || !myModelId) {
       setMyYears([]);
       setMyYearCode("");
-      setMyYearLabel("");
       setMyYearNumber("");
       if (!myEstimatedValueEdited) setMyEstimatedValue("");
       return;
     }
     setMyYearsLoading(true);
     setMyYearCode("");
-    setMyYearLabel("");
     setMyYearNumber("");
     if (!myEstimatedValueEdited) setMyEstimatedValue("");
 
@@ -138,7 +146,6 @@ export default function PostForm() {
       .finally(() => setMyYearsLoading(false));
   }, [myBrandId, myModelId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Quando ano do meu carro muda → busca preço FIPE
   useEffect(() => {
     if (!myBrandId || !myModelId || !myYearCode) return;
     fetch(
@@ -146,7 +153,6 @@ export default function PostForm() {
     )
       .then((r) => r.json())
       .then((data: { Valor: string; AnoModelo: number }) => {
-        // Valor vem como "R$ 25.000,00" → extrai número
         const cleaned = data.Valor.replace(/[R$\s.]/g, "").replace(",", ".");
         const price = parseFloat(cleaned);
         if (!isNaN(price) && !myEstimatedValueEdited) {
@@ -154,26 +160,36 @@ export default function PostForm() {
         }
         setMyYearNumber(String(data.AnoModelo));
       })
-      .catch(() => {
-        // Se falhar, o usuário preenche manualmente
-      });
+      .catch(() => {});
   }, [myBrandId, myModelId, myYearCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ================================================================
-  // VEÍCULOS DESEJADOS – cascata por linha
+  // VEÍCULOS DESEJADOS – cascata com modelo geral + versão + transmissão
   // ================================================================
-  const fetchModelsForRow = useCallback((rowId: number, brandId: string) => {
-    setRowModelsLoading((prev) => ({ ...prev, [rowId]: true }));
-    fetch(`/api/fipe/models?brandId=${brandId}`)
-      .then((r) => r.json())
-      .then((data: { codigo: number; nome: string }[]) => {
-        setRowModels((prev) => ({
-          ...prev,
-          [rowId]: data.map((m) => ({ value: String(m.codigo), label: m.nome })),
-        }));
-        setRowModelsLoading((prev) => ({ ...prev, [rowId]: false }));
-      })
-      .catch(() => setRowModelsLoading((prev) => ({ ...prev, [rowId]: false })));
+
+  // Busca dados FIPE e parseia para uma row
+  const fetchAndParseForRow = useCallback(async (rowId: number, brandId: string) => {
+    // Evita fetch duplicado
+    if (loadingRef.current[rowId]) return;
+    loadingRef.current[rowId] = true;
+    setRowParsedLoading((prev) => ({ ...prev, [rowId]: true }));
+
+    try {
+      const cached = fipeParsedCache.get(brandId);
+      if (cached) {
+        setRowParsed((prev) => ({ ...prev, [rowId]: cached }));
+        return;
+      }
+
+      const res = await fetch(`/api/fipe/models?brandId=${brandId}`);
+      const data: { codigo: number; nome: string }[] = await res.json();
+      const parsed = parseFipeModels(data);
+      fipeParsedCache.set(brandId, parsed);
+      setRowParsed((prev) => ({ ...prev, [rowId]: parsed }));
+    } finally {
+      loadingRef.current[rowId] = false;
+      setRowParsedLoading((prev) => ({ ...prev, [rowId]: false }));
+    }
   }, []);
 
   const handleRowBrandChange = useCallback(
@@ -185,36 +201,60 @@ export default function PostForm() {
                 ...r,
                 brandId: opt?.value || "",
                 brandLabel: opt?.label || "",
-                modelId: "",
-                modelLabel: "",
+                generalModel: "",
+                version: "",
+                versionLabel: "",
+                transmission: "",
               }
             : r
         )
       );
-      // Remove models cached da row anterior
-      setRowModels((prev) => {
+      // Limpa dados parseados da row
+      setRowParsed((prev) => {
         const next = { ...prev };
         delete next[rowId];
         return next;
       });
       if (opt) {
-        fetchModelsForRow(rowId, opt.value);
+        fetchAndParseForRow(rowId, opt.value);
       }
     },
-    [fetchModelsForRow]
+    [fetchAndParseForRow]
   );
 
-  const handleRowModelChange = useCallback(
+  const handleRowGeneralModelChange = useCallback(
     (rowId: number, opt: SelectOption | null) => {
       setRows((prev) =>
         prev.map((r) =>
           r.id === rowId
-            ? { ...r, modelId: opt?.value || "", modelLabel: opt?.label || "" }
+            ? { ...r, generalModel: opt?.label || "", version: "", versionLabel: "", transmission: "" }
             : r
         )
       );
     },
     []
+  );
+
+  const handleRowVersionChange = useCallback(
+    (rowId: number, opt: SelectOption | null) => {
+      // opt.value = version string, opt.label = version + trans display
+      setRows((prev) =>
+        prev.map((r) => {
+          if (r.id !== rowId) return r;
+          // Busca a VersionOption para extrair transmission
+          const parsed = rowParsed[rowId];
+          const versions = parsed?.versionsByGeneralModel[r.generalModel] || [];
+          const matched = versions.find((v) => v.version === opt?.value);
+          return {
+            ...r,
+            version: opt?.value || "",
+            versionLabel: opt?.label || "",
+            transmission: matched?.transmission || "",
+          };
+        })
+      );
+    },
+    [rowParsed]
   );
 
   const updateRowField = useCallback(
@@ -242,20 +282,25 @@ export default function PostForm() {
     try {
       const formData = new FormData(e.currentTarget);
 
-      // Atualiza/sobrescreve os campos com os valores selecionados via FIPE
+      // Meu Carro
       formData.set("brand", myBrandLabel);
       formData.set("model", myModelLabel);
       formData.set("year", myYearNumber);
       formData.set("estimatedValue", myEstimatedValue);
 
-      // Remove fields antigos dos veículos desejados para não duplicar
-      for (const key of ["vBrand", "vModel", "vYearMin", "vYearMax", "vCashAdj", "vTolerance"]) {
+      // Veículos desejados – limpa e recria
+      for (const key of [
+        "vBrand", "vModel", "vVersion", "vTransmission",
+        "vYearMin", "vYearMax", "vCashAdj", "vTolerance",
+      ]) {
         formData.delete(key);
       }
       for (const r of rows) {
         if (!r.brandLabel.trim()) continue;
         formData.append("vBrand", r.brandLabel.trim());
-        formData.append("vModel", r.modelLabel.trim());
+        formData.append("vModel", r.generalModel.trim());
+        formData.append("vVersion", r.version);
+        formData.append("vTransmission", r.transmission);
         formData.append("vYearMin", r.yearMin);
         formData.append("vYearMax", r.yearMax);
         formData.append("vCashAdj", r.cashAdj);
@@ -351,7 +396,6 @@ export default function PostForm() {
               loading={myYearsLoading}
               onChange={(opt) => {
                 setMyYearCode(opt?.value || "");
-                setMyYearLabel(opt?.label || "");
                 setMyEstimatedValueEdited(false);
               }}
               required
@@ -388,7 +432,6 @@ export default function PostForm() {
           </div>
         </div>
 
-        {/* Hidden fields para envio (preenchidos via estado) */}
         <input type="hidden" name="brand" value={myBrandLabel} />
         <input type="hidden" name="model" value={myModelLabel} />
         <input type="hidden" name="year" value={myYearNumber} />
@@ -399,98 +442,146 @@ export default function PostForm() {
         <legend className="font-semibold text-sm px-1">O que eu quero na troca</legend>
 
         <p className="text-xs text-gray-500">
-          Adicione os carros que você aceitaria na troca. Selecione marca e modelo conforme a Tabela FIPE.
+          Adicione os carros que você aceitaria na troca. Selecione marca, modelo, versão e transmissão conforme a Tabela FIPE.
           Cada um pode ter seu próprio ajuste de grana, ano e tolerância.
         </p>
 
-        {rows.map((r, idx) => (
-          <div key={r.id} className="border border-gray-100 rounded p-3 space-y-2 bg-gray-50/50">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-400">Veículo {idx + 1}</span>
-              <button
-                type="button"
-                onClick={() => removeRow(r.id)}
-                disabled={rows.length <= 1}
-                className="text-red-400 hover:text-red-600 disabled:opacity-30 text-sm px-1"
-              >
-                ✕ remover
-              </button>
-            </div>
+        {rows.map((r, idx) => {
+          const parsed = rowParsed[r.id];
+          const generalModels: SelectOption[] = (parsed?.generalModels || []).map((gm) => ({
+            value: gm,
+            label: gm,
+          }));
+          const versions: SelectOption[] = (
+            parsed?.versionsByGeneralModel[r.generalModel] || []
+          ).map((v) => ({
+            value: v.version,
+            label: v.transmission
+              ? `${v.version} · ${v.transmission}`
+              : v.version,
+          }));
 
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <SearchableSelect
-                  label="Marca"
-                  placeholder="Selecione..."
-                  value={r.brandId}
-                  options={brands}
-                  loading={brandsLoading}
-                  onChange={(opt) => handleRowBrandChange(r.id, opt)}
-                  required
-                />
+          return (
+            <div key={r.id} className="border border-gray-100 rounded p-3 space-y-2 bg-gray-50/50">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-400">Veículo {idx + 1}</span>
+                <button
+                  type="button"
+                  onClick={() => removeRow(r.id)}
+                  disabled={rows.length <= 1}
+                  className="text-red-400 hover:text-red-600 disabled:opacity-30 text-sm px-1"
+                >
+                  ✕ remover
+                </button>
               </div>
-              <div>
-                <SearchableSelect
-                  label="Modelo"
-                  key={`row-model-${r.id}-${r.brandId || "none"}`}
-                  placeholder={
-                    !r.brandId
-                      ? "Marca primeiro"
-                      : "Selecione..."
-                  }
-                  value={r.modelId}
-                  options={rowModels[r.id] || []}
-                  loading={rowModelsLoading[r.id] || false}
-                  onChange={(opt) => handleRowModelChange(r.id, opt)}
-                  disabled={!r.brandId}
-                />
-              </div>
-            </div>
 
-            <div className="grid grid-cols-4 gap-1">
-              <div className="min-w-0">
-                <label className="block text-[10px] font-medium mb-0.5 text-gray-500 truncate">Ano min</label>
-                <input
-                  value={r.yearMin}
-                  onChange={(e) => updateRowField(r.id, "yearMin", e.target.value)}
-                  type="number"
-                  className="w-full border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-blue-500"
-                />
+              {/* Marca + Modelo Geral + Versão */}
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <SearchableSelect
+                    label="Marca"
+                    placeholder="Selecione..."
+                    value={r.brandId}
+                    options={brands}
+                    loading={brandsLoading}
+                    onChange={(opt) => handleRowBrandChange(r.id, opt)}
+                    required
+                  />
+                </div>
+                <div>
+                  <SearchableSelect
+                    label="Modelo"
+                    key={`row-modelo-${r.id}-${r.brandId || "none"}`}
+                    placeholder={
+                      !r.brandId
+                        ? "Marca primeiro"
+                        : "Selecione..."
+                    }
+                    value={r.generalModel}
+                    options={generalModels}
+                    loading={rowParsedLoading[r.id] || false}
+                    onChange={(opt) => handleRowGeneralModelChange(r.id, opt)}
+                    disabled={!r.brandId}
+                  />
+                </div>
+                <div>
+                  <SearchableSelect
+                    label="Versão"
+                    key={`row-version-${r.id}-${r.generalModel || "none"}`}
+                    placeholder={
+                      !r.generalModel
+                        ? "Modelo primeiro"
+                        : "Selecione..."
+                    }
+                    value={r.version}
+                    options={versions}
+                    loading={false}
+                    onChange={(opt) => handleRowVersionChange(r.id, opt)}
+                    disabled={!r.generalModel}
+                  />
+                </div>
               </div>
-              <div className="min-w-0">
-                <label className="block text-[10px] font-medium mb-0.5 text-gray-500 truncate">Ano max</label>
-                <input
-                  value={r.yearMax}
-                  onChange={(e) => updateRowField(r.id, "yearMax", e.target.value)}
-                  type="number"
-                  className="w-full border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div className="min-w-0">
-                <label className="block text-[10px] font-medium mb-0.5 text-gray-500 truncate">Grana (R$)</label>
-                <input
-                  value={r.cashAdj}
-                  onChange={(e) => updateRowField(r.id, "cashAdj", e.target.value)}
-                  type="number"
-                  className="w-full border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-blue-500"
-                />
-              </div>
-              <div className="min-w-0">
-                <label className="block text-[10px] font-medium mb-0.5 text-gray-500 truncate">±Tolerância</label>
-                <input
-                  value={r.tolerance}
-                  onChange={(e) => updateRowField(r.id, "tolerance", e.target.value)}
-                  type="number"
-                  className="w-full border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-blue-500"
-                />
-              </div>
-            </div>
 
-            <p className="text-[10px] text-gray-400 leading-tight">
-              <strong>Grana positiva</strong> = você paga esse valor. <strong>Negativa</strong> = você recebe.
-            </p>
-          </div>
-        ))}
+              {/* Transmissão + Ano + Grana */}
+              <div className="grid grid-cols-5 gap-1">
+                <div className="min-w-0">
+                  <label className="block text-[10px] font-medium mb-0.5 text-gray-500">
+                    Transmissão
+                  </label>
+                  <select
+                    value={r.transmission}
+                    onChange={(e) => updateRowField(r.id, "transmission", e.target.value)}
+                    className="w-full border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-blue-500 bg-white"
+                  >
+                    <option value="">Indiferente</option>
+                    <option value="Automático">Automático</option>
+                    <option value="Manual">Manual</option>
+                  </select>
+                </div>
+                <div className="min-w-0">
+                  <label className="block text-[10px] font-medium mb-0.5 text-gray-500 truncate">Ano min</label>
+                  <input
+                    value={r.yearMin}
+                    onChange={(e) => updateRowField(r.id, "yearMin", e.target.value)}
+                    type="number"
+                    className="w-full border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <label className="block text-[10px] font-medium mb-0.5 text-gray-500 truncate">Ano max</label>
+                  <input
+                    value={r.yearMax}
+                    onChange={(e) => updateRowField(r.id, "yearMax", e.target.value)}
+                    type="number"
+                    className="w-full border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <label className="block text-[10px] font-medium mb-0.5 text-gray-500 truncate">Grana (R$)</label>
+                  <input
+                    value={r.cashAdj}
+                    onChange={(e) => updateRowField(r.id, "cashAdj", e.target.value)}
+                    type="number"
+                    className="w-full border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <label className="block text-[10px] font-medium mb-0.5 text-gray-500 truncate">±Tolerância</label>
+                  <input
+                    value={r.tolerance}
+                    onChange={(e) => updateRowField(r.id, "tolerance", e.target.value)}
+                    type="number"
+                    className="w-full border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <p className="text-[10px] text-gray-400 leading-tight">
+                <strong>Grana positiva</strong> = você paga esse valor. <strong>Negativa</strong> = você recebe.
+              </p>
+            </div>
+          );
+        })}
 
         <button type="button" onClick={addRow} className="text-blue-600 text-sm hover:text-blue-800">
           + Adicionar outro veículo

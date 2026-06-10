@@ -4,17 +4,61 @@ import type { CarPost, Match, DesiredVehicle } from "./types";
 
 /**
  * Checks if a single DesiredVehicle matches an offered car.
+ *
+ * Regras de matching:
+ * - Marca: igualdade exata (case-insensitive)
+ * - Modelo (geral): car.model DEVE COMEÇAR COM want.model
+ *   Ex: want "Fit" casa com "Fit CX 1.4 Flex 16V 5p Aut."
+ * - Versão: car.model DEVE CONTER want.version (substring)
+ *   Ex: want "CX 1.4" casa com "Fit CX 1.4 Flex 16V 5p Aut."
+ * - Transmissão: car.model deve conter "Aut." ou "Mec." conforme
+ * - Ano: bounds (unchanged)
  */
 function vehicleMatchesCar(
   car: CarPost["car"],
   want: DesiredVehicle
 ): boolean {
+  // Marca
   if (want.brand && car.brand.toLowerCase() !== want.brand.toLowerCase()) {
     return false;
   }
-  if (want.model && car.model.toLowerCase() !== want.model.toLowerCase()) {
-    return false;
+
+  const carModelLower = car.model.toLowerCase();
+
+  // Modelo geral: car.model deve COMEÇAR com o modelo geral
+  if (want.model) {
+    const wantModel = want.model.toLowerCase().trim();
+    // Se o modelo geral for "City", "Civic" - verifica se começa com
+    // Mas preciso tomar cuidado com "CITY" vs "City" na FIPE
+    if (!carModelLower.startsWith(wantModel)) {
+      // Fallback: tenta ver se o modelo geral aparece como palavra após "CITY"/"City"
+      // Ex: "CITY Hatchback..." → want "City" não startsWith "CITY"
+      if (!carModelLower.includes(wantModel)) {
+        return false;
+      }
+    }
   }
+
+  // Versão específica: car.model deve conter a versão
+  if (want.version) {
+    if (!carModelLower.includes(want.version.toLowerCase().trim())) {
+      return false;
+    }
+  }
+
+  // Transmissão
+  if (want.transmission) {
+    const hasAuto = carModelLower.includes("aut.");
+    const hasManual = carModelLower.includes("mec.");
+    if (want.transmission === "Automático" && !hasAuto) {
+      return false;
+    }
+    if (want.transmission === "Manual" && !hasManual) {
+      return false;
+    }
+  }
+
+  // Ano
   if (want.yearMin && car.year < want.yearMin) return false;
   if (want.yearMax && car.year > want.yearMax) return false;
   return true;
@@ -74,6 +118,55 @@ function cashCompatible(
 }
 
 /**
+ * Verifica se um DesiredVehicle "encaixa" no carro oferecido,
+ * considerando os critérios de marca, modelo, versão e transmissão.
+ * Retorna quantos critérios foram atendidos (0-3) para pontuação.
+ */
+function matchLevel(
+  car: CarPost["car"],
+  want: DesiredVehicle
+): number {
+  let level = 0;
+
+  // Marca (básico)
+  if (
+    want.brand &&
+    car.brand.toLowerCase() === want.brand.toLowerCase()
+  ) {
+    level++;
+  }
+
+  // Modelo geral
+  if (want.model) {
+    const carModelLower = car.model.toLowerCase();
+    const wantModel = want.model.toLowerCase().trim();
+    if (
+      carModelLower.startsWith(wantModel) ||
+      carModelLower.includes(` ${wantModel}`)
+    ) {
+      level++;
+    }
+  }
+
+  // Versão + Transmissão (detalhes)
+  if (want.version || want.transmission) {
+    let detailMatch = true;
+    if (want.version && !car.model.toLowerCase().includes(want.version.toLowerCase())) {
+      detailMatch = false;
+    }
+    if (detailMatch && want.transmission) {
+      const hasAuto = car.model.toLowerCase().includes("aut.");
+      const hasManual = car.model.toLowerCase().includes("mec.");
+      if (want.transmission === "Automático" && !hasAuto) detailMatch = false;
+      if (want.transmission === "Manual" && !hasManual) detailMatch = false;
+    }
+    if (detailMatch) level++;
+  }
+
+  return level;
+}
+
+/**
  * Calcula a pontuação de um match entre dois vehicles desejados específicos.
  * Retorna score 0–100.
  */
@@ -86,26 +179,15 @@ function calculateVehicleScore(
 ): number {
   let score = 0;
 
-  // Car match (max 40)
-  const aExact =
-    wantA.brand.toLowerCase() === carB.brand.toLowerCase() &&
-    (!wantA.model ||
-      wantA.model.toLowerCase() === carB.model.toLowerCase());
-  const aBrand =
-    wantA.brand.toLowerCase() === carB.brand.toLowerCase();
-  const bExact =
-    wantB.brand.toLowerCase() === carA.brand.toLowerCase() &&
-    (!wantB.model ||
-      wantB.model.toLowerCase() === carA.model.toLowerCase());
-  const bBrand =
-    wantB.brand.toLowerCase() === carA.brand.toLowerCase();
+  // Car match (max 40) — baseado no nível de detalhe do match de cada lado
+  const levelA = matchLevel(carB, wantA);
+  const levelB = matchLevel(carA, wantB);
+  const avgLevel = (levelA + levelB) / 2;
 
-  if (aExact && bExact) score += 40;
-  else if (aExact && bBrand) score += 30;
-  else if (bExact && aBrand) score += 30;
-  else if (aBrand && bBrand) score += 20;
-  else if (aExact || bExact) score += 15;
-  else if (aBrand || bBrand) score += 10;
+  if (avgLevel >= 2.5) score += 40;      // ambos com detalhes
+  else if (avgLevel >= 1.5) score += 30; // um detalha, outro não
+  else if (avgLevel >= 0.5) score += 20; // só marca
+  else score += 10;                       // fallback
 
   // Year proximity (max 20)
   const centerA =
@@ -159,14 +241,11 @@ function findBestVehicleMatch(
   let best: VehicleMatchResult | null = null;
 
   for (const wantA of aVehicles) {
-    // A deseja B? O veículo que A quer equivale ao carro que B oferece?
     if (!vehicleMatchesCar(postB.car, wantA)) continue;
 
     for (const wantB of bVehicles) {
-      // B deseja A?
       if (!vehicleMatchesCar(postA.car, wantB)) continue;
 
-      // Compatibilidade de grana
       const rangeA = getCashRange(
         wantA.cashAdjustment,
         wantA.cashAdjustmentTolerance

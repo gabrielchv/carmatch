@@ -274,5 +274,35 @@
     "images": [],
     "createdAt": "2026-06-09T21:59:57.234Z",
     "isActive": true
+  },
+  {
+    "id": "9884d32c-30bf-4034-99f1-f9f7072f9e48",
+    "userId": "6ea5ae58-5f81-42e6-a695-d50887a359a5",
+    "title": "Honda Fit 2014",
+    "description": "Teste",
+    "car": {
+      "brand": "Honda",
+      "model": "Fit CX 1.4 Flex 16V 5p Aut.",
+      "year": 2014,
+      "estimatedValue": 54650
+    },
+    "desiredTrade": {
+      "vehicles": [
+        {
+          "brand": "Honda",
+          "model": "Fit",
+          "version": "CX 1.4 Flex 16V 5p",
+          "transmission": "Automático",
+          "yearMin": 2010,
+          "yearMax": 2018,
+          "cashAdjustment": 0,
+          "cashAdjustmentTolerance": 2000
+        }
+      ]
+    },
+    "contactInfo": {},
+    "images": [],
+    "createdAt": "2026-06-10T01:40:45.689Z",
+    "isActive": true
   }
 ]

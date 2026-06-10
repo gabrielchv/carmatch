@@ -14,7 +14,9 @@ export interface CarDetail {
 
 export interface DesiredVehicle {
   brand: string;
-  model: string;
+  model: string;          // modelo geral ex: "Fit" (primeira palavra do nome FIPE)
+  version?: string;       // versão específica ex: "CX 1.4 Flex 16V 5p"
+  transmission?: string;  // "Automático" | "Manual"
   yearMin?: number;
   yearMax?: number;
   cashAdjustment: number;        // quanto o dono do post paga (+) ou recebe (-)

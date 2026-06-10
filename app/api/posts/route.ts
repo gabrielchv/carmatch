@@ -63,6 +63,8 @@ export async function POST(request: Request) {
     // Monta array de vehicles a partir dos fields do form
     const vehicleBrands = formData.getAll("vBrand") as string[];
     const vehicleModels = formData.getAll("vModel") as string[];
+    const vehicleVersions = formData.getAll("vVersion") as string[];
+    const vehicleTransmissions = formData.getAll("vTransmission") as string[];
     const vehicleYearMin = formData.getAll("vYearMin") as string[];
     const vehicleYearMax = formData.getAll("vYearMax") as string[];
     const vehicleCashAdj = formData.getAll("vCashAdj") as string[];
@@ -75,6 +77,8 @@ export async function POST(request: Request) {
       vehicles.push({
         brand: vb,
         model: vehicleModels[i]?.trim() || "",
+        version: vehicleVersions[i]?.trim() || undefined,
+        transmission: vehicleTransmissions[i]?.trim() || undefined,
         yearMin: vehicleYearMin[i] ? Number(vehicleYearMin[i]) : undefined,
         yearMax: vehicleYearMax[i] ? Number(vehicleYearMax[i]) : undefined,
         cashAdjustment: Number(vehicleCashAdj[i]) || 0,
