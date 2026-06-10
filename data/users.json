@@ -52,5 +52,11 @@
     "name": "gabriel",
     "email": "gabriel@gmail.com",
     "createdAt": "2026-06-10T01:01:23.743Z"
+  },
+  {
+    "id": "fce6ff2b-b2f4-401c-9f19-6c3da0c5e940",
+    "name": "Teste",
+    "email": "teste@email.com",
+    "createdAt": "2026-06-10T01:47:51.019Z"
   }
 ]

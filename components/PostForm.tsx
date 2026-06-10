@@ -56,13 +56,19 @@ export default function PostForm() {
   // ───── Meu Carro ─────
   const [myBrandId, setMyBrandId] = useState("");
   const [myBrandLabel, setMyBrandLabel] = useState("");
-  const [myModelId, setMyModelId] = useState("");
-  const [myModelLabel, setMyModelLabel] = useState("");
+  const [myGeneralModel, setMyGeneralModel] = useState("");            // ex: "Fit"
+  const [myVersion, setMyVersion] = useState("");                       // ex: "CX 1.4 Flex 16V 5p"
+  const [myVersionFullName, setMyVersionFullName] = useState("");       // nome FIPE completo p/ submit
+  const [myVersionModelCode, setMyVersionModelCode] = useState("");     // código FIPE p/ ano/preço
   const [myYearCode, setMyYearCode] = useState("");
   const [myYearNumber, setMyYearNumber] = useState("");
 
-  const [myModels, setMyModels] = useState<SelectOption[]>([]);
-  const [myModelsLoading, setMyModelsLoading] = useState(false);
+  // Dados FIPE parseados para "Meu Carro"
+  const [myParsed, setMyParsed] = useState<{
+    generalModels: string[];
+    versionsByGeneralModel: Record<string, VersionOption[]>;
+  } | null>(null);
+  const [myParsedLoading, setMyParsedLoading] = useState(false);
   const [myYears, setMyYears] = useState<SelectOption[]>([]);
   const [myYearsLoading, setMyYearsLoading] = useState(false);
 
@@ -96,37 +102,53 @@ export default function PostForm() {
   }, []);
 
   // ================================================================
-  // MEU CARRO – cascata
+  // MEU CARRO – cascata (marca → modelo geral → versão → ano → preço)
   // ================================================================
+
+  // 1. Quando marca muda → busca e parseia modelos FIPE
   useEffect(() => {
     if (!myBrandId) {
-      setMyModels([]);
-      setMyModelId("");
-      setMyModelLabel("");
+      setMyParsed(null);
+      setMyGeneralModel("");
+      setMyVersion("");
+      setMyVersionFullName("");
+      setMyVersionModelCode("");
       setMyYears([]);
       setMyYearCode("");
       setMyYearNumber("");
       if (!myEstimatedValueEdited) setMyEstimatedValue("");
       return;
     }
-    setMyModelsLoading(true);
-    setMyModelId("");
-    setMyModelLabel("");
+    setMyParsedLoading(true);
+    setMyGeneralModel("");
+    setMyVersion("");
+    setMyVersionFullName("");
+    setMyVersionModelCode("");
     setMyYears([]);
     setMyYearCode("");
     setMyYearNumber("");
     if (!myEstimatedValueEdited) setMyEstimatedValue("");
 
+    const cached = fipeParsedCache.get(myBrandId);
+    if (cached) {
+      setMyParsed(cached);
+      setMyParsedLoading(false);
+      return;
+    }
+
     fetch(`/api/fipe/models?brandId=${myBrandId}`)
       .then((r) => r.json())
       .then((data: { codigo: number; nome: string }[]) => {
-        setMyModels(data.map((m) => ({ value: String(m.codigo), label: m.nome })));
+        const parsed = parseFipeModels(data);
+        fipeParsedCache.set(myBrandId, parsed);
+        setMyParsed(parsed);
       })
-      .finally(() => setMyModelsLoading(false));
+      .finally(() => setMyParsedLoading(false));
   }, [myBrandId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 2. Quando versão selecionada → busca anos usando modelCode
   useEffect(() => {
-    if (!myBrandId || !myModelId) {
+    if (!myBrandId || !myVersionModelCode) {
       setMyYears([]);
       setMyYearCode("");
       setMyYearNumber("");
@@ -138,18 +160,19 @@ export default function PostForm() {
     setMyYearNumber("");
     if (!myEstimatedValueEdited) setMyEstimatedValue("");
 
-    fetch(`/api/fipe/years?brandId=${myBrandId}&modelId=${myModelId}`)
+    fetch(`/api/fipe/years?brandId=${myBrandId}&modelId=${myVersionModelCode}`)
       .then((r) => r.json())
       .then((data: { codigo: string; nome: string }[]) => {
         setMyYears(data.map((y) => ({ value: y.codigo, label: y.nome })));
       })
       .finally(() => setMyYearsLoading(false));
-  }, [myBrandId, myModelId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [myBrandId, myVersionModelCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 3. Quando ano selecionado → busca preço FIPE
   useEffect(() => {
-    if (!myBrandId || !myModelId || !myYearCode) return;
+    if (!myBrandId || !myVersionModelCode || !myYearCode) return;
     fetch(
-      `/api/fipe/price?brandId=${myBrandId}&modelId=${myModelId}&yearCode=${myYearCode}`
+      `/api/fipe/price?brandId=${myBrandId}&modelId=${myVersionModelCode}&yearCode=${myYearCode}`
     )
       .then((r) => r.json())
       .then((data: { Valor: string; AnoModelo: number }) => {
@@ -161,7 +184,7 @@ export default function PostForm() {
         setMyYearNumber(String(data.AnoModelo));
       })
       .catch(() => {});
-  }, [myBrandId, myModelId, myYearCode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [myBrandId, myVersionModelCode, myYearCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ================================================================
   // VEÍCULOS DESEJADOS – cascata com modelo geral + versão + transmissão
@@ -284,7 +307,7 @@ export default function PostForm() {
 
       // Meu Carro
       formData.set("brand", myBrandLabel);
-      formData.set("model", myModelLabel);
+      formData.set("model", myVersionFullName);
       formData.set("year", myYearNumber);
       formData.set("estimatedValue", myEstimatedValue);
 
@@ -326,7 +349,7 @@ export default function PostForm() {
   };
 
   const isSubmitReady =
-    myBrandLabel && myModelLabel && myYearNumber && myEstimatedValue;
+    myBrandLabel && myGeneralModel && myVersion && myYearNumber && myEstimatedValue;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -347,8 +370,8 @@ export default function PostForm() {
         <p className="text-xs text-gray-500">
           Selecione os dados conforme a Tabela FIPE. O valor estimado é preenchido automaticamente.
         </p>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="col-span-2 sm:col-span-1">
+        <div className="grid grid-cols-3 gap-3">
+          <div className="col-span-3 sm:col-span-1">
             <SearchableSelect
               label="Marca"
               placeholder="Selecione a marca..."
@@ -362,33 +385,71 @@ export default function PostForm() {
               required
             />
           </div>
-          <div className="col-span-2 sm:col-span-1">
+          <div className="col-span-3 sm:col-span-1">
             <SearchableSelect
               label="Modelo"
               key={`my-model-${myBrandId || "none"}`}
               placeholder={
                 !myBrandId
                   ? "Selecione a marca primeiro"
-                  : "Selecione o modelo..."
+                  : "Selecione..."
               }
-              value={myModelId}
-              options={myModels}
-              loading={myModelsLoading}
+              value={myGeneralModel}
+              options={myParsed?.generalModels.map((gm) => ({ value: gm, label: gm })) || []}
+              loading={myParsedLoading}
               onChange={(opt) => {
-                setMyModelId(opt?.value || "");
-                setMyModelLabel(opt?.label || "");
+                setMyGeneralModel(opt?.label || "");
+                setMyVersion("");
+                setMyVersionFullName("");
+                setMyVersionModelCode("");
+                setMyYears([]);
+                setMyYearCode("");
+                setMyYearNumber("");
+                if (!myEstimatedValueEdited) setMyEstimatedValue("");
               }}
               required
               disabled={!myBrandId}
             />
           </div>
+          <div className="col-span-3 sm:col-span-1">
+            <SearchableSelect
+              label="Versão"
+              key={`my-version-${myGeneralModel || "none"}`}
+              placeholder={
+                !myGeneralModel
+                  ? "Modelo primeiro"
+                  : "Selecione a versão..."
+              }
+              value={myVersion}
+              options={(myParsed?.versionsByGeneralModel[myGeneralModel] || []).map((v) => ({
+                value: v.version,
+                label: v.transmission
+                  ? `${v.version} · ${v.transmission}`
+                  : v.version,
+              }))}
+              loading={false}
+              onChange={(opt) => {
+                const parsed = myParsed;
+                const versions = parsed?.versionsByGeneralModel[myGeneralModel] || [];
+                const matched = versions.find((vv) => vv.version === opt?.value);
+                setMyVersion(opt?.value || "");
+                setMyVersionFullName(matched?.fullName || "");
+                setMyVersionModelCode(matched?.modelCode || "");
+                setMyEstimatedValueEdited(false);
+              }}
+              required
+              disabled={!myGeneralModel}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <SearchableSelect
               label="Ano"
-              key={`my-year-${myModelId || "none"}`}
+              key={`my-year-${myVersionModelCode || "none"}`}
               placeholder={
-                !myModelId
-                  ? "Selecione o modelo primeiro"
+                !myVersionModelCode
+                  ? "Selecione a versão primeiro"
                   : "Selecione o ano..."
               }
               value={myYearCode}
@@ -399,7 +460,7 @@ export default function PostForm() {
                 setMyEstimatedValueEdited(false);
               }}
               required
-              disabled={!myModelId}
+              disabled={!myVersionModelCode}
             />
           </div>
           <div>
@@ -433,7 +494,7 @@ export default function PostForm() {
         </div>
 
         <input type="hidden" name="brand" value={myBrandLabel} />
-        <input type="hidden" name="model" value={myModelLabel} />
+        <input type="hidden" name="model" value={myVersionFullName} />
         <input type="hidden" name="year" value={myYearNumber} />
       </fieldset>
 

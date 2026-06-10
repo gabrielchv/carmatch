@@ -6,7 +6,7 @@
     "score": 80,
     "suggestedCashFromA": 4000,
     "status": "pending",
-    "createdAt": "2026-06-10T01:40:45.690Z"
+    "createdAt": "2026-06-10T01:47:51.062Z"
   },
   {
     "id": "bb22d2d6-f8a5-4c74-88ac-00625d27e72e",
@@ -15,7 +15,7 @@
     "score": 70,
     "suggestedCashFromA": 5000,
     "status": "pending",
-    "createdAt": "2026-06-10T01:40:45.690Z"
+    "createdAt": "2026-06-10T01:47:51.062Z"
   },
   {
     "id": "78adff55-0be1-4e4a-b7a9-18169468151a",
@@ -24,6 +24,6 @@
     "score": 80,
     "suggestedCashFromA": 3000,
     "status": "pending",
-    "createdAt": "2026-06-10T01:40:45.690Z"
+    "createdAt": "2026-06-10T01:47:51.062Z"
   }
 ]
