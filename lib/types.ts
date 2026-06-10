@@ -12,13 +12,17 @@ export interface CarDetail {
   estimatedValue: number;
 }
 
-export interface DesiredTrade {
-  brand?: string;
-  model?: string;
+export interface DesiredVehicle {
+  brand: string;
+  model: string;
   yearMin?: number;
   yearMax?: number;
-  cashAdjustment: number;
-  cashAdjustmentTolerance: number;
+  cashAdjustment: number;        // quanto o dono do post paga (+) ou recebe (-)
+  cashAdjustmentTolerance: number; // ±tolerância
+}
+
+export interface DesiredTrade {
+  vehicles: DesiredVehicle[];
 }
 
 export interface CarPost {
@@ -42,7 +46,7 @@ export interface Match {
   postAId: string;
   postBId: string;
   score: number;
-  suggestedCashFromA: number;
+  suggestedCashFromA: number; // quanto A paga pra B (negativo = B paga A)
   status: "pending" | "contacted";
   createdAt: string;
 }

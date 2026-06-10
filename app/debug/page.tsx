@@ -3,121 +3,108 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-interface DbState {
-  users: { id: string; name: string; email: string }[];
-  posts: { id: string; title: string; userId: string; car: { brand: string; model: string; year: number; estimatedValue: number }; createdAt: string }[];
-  matches: { id: string; postAId: string; postBId: string; score: number; suggestedCashFromA: number }[];
+interface PostData {
+  id: string;
+  title: string;
+  userId: string;
+  car: { brand: string; model: string; year: number; estimatedValue: number };
+  createdAt: string;
+}
+
+interface MatchData {
+  id: string;
+  postAId: string;
+  postBId: string;
+  score: number;
+  suggestedCashFromA: number;
+  createdAt: string;
 }
 
 export default function DebugPage() {
   const router = useRouter();
-  const [authOk, setAuthOk] = useState(false);
   const [msg, setMsg] = useState("");
-  const [dbState, setDbState] = useState<DbState | null>(null);
+  const [posts, setPosts] = useState<PostData[]>([]);
+  const [matches, setMatches] = useState<MatchData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchState = useCallback(async () => {
+  const fetchData = useCallback(async () => {
+    setLoading(true);
     try {
-      const authRes = await fetch("/api/auth/me");
-      if (!authRes.ok) {
-        router.push("/auth");
-        return;
-      }
-      setAuthOk(true);
-
-      // Fetch all data
-      const [usersRes, postsRes, matchesRes] = await Promise.all([
-        fetch("/api/auth/me"),
+      const [postsRes, matchesRes] = await Promise.all([
         fetch("/api/posts"),
-        fetch("/api/posts"), // We need dedicated debug endpoints, but for v0 it's OK
+        fetch("/api/matches"),
       ]);
 
-      // Fetch all users (from the users file directly needed)
-      // For simplicity, we fetch from the login endpoint just to get the info...
-
-      // Actually let's fetch from debug endpoints - we'll build this differently
-      // For now, try to inspect via the regular API
-      const postsData = await postsRes.json();
-      const allPosts = postsData.posts || [];
-
-      // Fetch users from the DB directly through a simple approach
-      // Since we don't have a users list API, let's use the seed data info
-      setDbState({
-        users: [],
-        posts: allPosts.map((p: any) => ({
-          id: p.id,
-          title: p.title,
-          userId: p.userId,
-          car: p.car,
-          createdAt: p.createdAt,
-        })),
-        matches: [],
-      });
-    } catch {
-      // ignore
+      if (postsRes.ok) {
+        const d = await postsRes.json();
+        setPosts(
+          (d.posts || []).map((p: any) => ({
+            id: p.id,
+            title: p.title,
+            userId: p.userId,
+            car: p.car,
+            createdAt: p.createdAt,
+          }))
+        );
+      }
+      if (matchesRes.ok) {
+        const d = await matchesRes.json();
+        setMatches(d.matches || []);
+      }
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, []);
 
   useEffect(() => {
-    fetchState();
-  }, [fetchState]);
+    fetchData();
+  }, [fetchData]);
 
   const doAction = async (url: string, label: string) => {
     setMsg(`${label}...`);
     try {
       const res = await fetch(url, { method: "POST" });
       const data = await res.json();
-      setMsg(`${label} done: ${JSON.stringify(data)}`);
-      await fetchState();
+      setMsg(`${label} → ${JSON.stringify(data)}`);
+      await fetchData();
     } catch {
-      setMsg(`${label} failed`);
+      setMsg(`${label} → erro`);
     }
   };
 
-  const refresh = async () => {
-    setLoading(true);
-    await fetchState();
-  };
-
-  if (loading) {
-    return <div className="text-center py-16 text-gray-400">Loading...</div>;
-  }
-
-  if (!authOk) return null;
-
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Debug / Testing Dashboard</h1>
+        <h1 className="text-2xl font-bold">🔧 Painel de Testes</h1>
         <button
-          onClick={refresh}
+          onClick={fetchData}
           className="text-sm text-blue-600 hover:underline"
         >
-          Refresh
+          Atualizar
         </button>
       </div>
 
-      {/* Quick Actions */}
-      <div className="flex flex-wrap gap-3">
+      {/* Ações rápidas */}
+      <div className="flex flex-wrap gap-2">
         <button
-          onClick={() => doAction("/api/debug/seed", "Seeding data")}
-          className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 transition-colors"
+          onClick={() => doAction("/api/debug/seed", "Seed")}
+          className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700"
         >
-          🌱 Seed Mock Data
+          🌱 Popular dados mock
         </button>
         <button
-          onClick={() => doAction("/api/matches/trigger", "Triggering matching")}
-          className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 transition-colors"
+          onClick={() => doAction("/api/matches/trigger", "Matching")}
+          className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
         >
-          🔄 Trigger Matching
+          🔄 Rodar matching
         </button>
         <button
-          onClick={() => doAction("/api/debug/clear", "Clearing data")}
-          className="bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700 transition-colors"
+          onClick={() => doAction("/api/debug/clear", "Limpar")}
+          className="bg-red-600 text-white px-4 py-2 rounded text-sm hover:bg-red-700"
         >
-          🗑️ Clear All Data
+          🗑️ Limpar tudo
         </button>
       </div>
 
@@ -127,50 +114,44 @@ export default function DebugPage() {
         </div>
       )}
 
-      {/* Database State */}
-      {dbState && (
-        <div className="space-y-6">
-          {/* Users table */}
+      {loading ? (
+        <div className="text-center py-8 text-gray-400">Carregando...</div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Posts */}
           <section>
-            <h2 className="font-semibold mb-2">
-              Posts ({dbState.posts.length})
+            <h2 className="font-semibold mb-2 text-sm">
+              Anúncios ({posts.length})
             </h2>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-96 overflow-y-auto border rounded">
               <table className="w-full text-xs border-collapse">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="text-left p-2 border">ID</th>
-                    <th className="text-left p-2 border">Title</th>
-                    <th className="text-left p-2 border">Car</th>
-                    <th className="text-right p-2 border">Value</th>
-                    <th className="text-left p-2 border">Created</th>
+                <thead className="sticky top-0 bg-gray-100">
+                  <tr>
+                    <th className="text-left p-2 border">Título</th>
+                    <th className="text-left p-2 border">Carro</th>
+                    <th className="text-right p-2 border">Valor</th>
+                    <th className="text-left p-2 border">Criado</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {dbState.posts.map((p) => (
+                  {posts.map((p) => (
                     <tr key={p.id} className="hover:bg-gray-50">
-                      <td className="p-2 border font-mono">
-                        {p.id.slice(0, 8)}...
-                      </td>
-                      <td className="p-2 border">{p.title}</td>
-                      <td className="p-2 border">
+                      <td className="p-2 border font-medium">{p.title}</td>
+                      <td className="p-2 border text-gray-500">
                         {p.car.brand} {p.car.model} {p.car.year}
                       </td>
                       <td className="p-2 border text-right">
                         R$ {p.car.estimatedValue.toLocaleString("pt-BR")}
                       </td>
-                      <td className="p-2 border text-xs">
+                      <td className="p-2 border text-gray-400">
                         {new Date(p.createdAt).toLocaleString("pt-BR")}
                       </td>
                     </tr>
                   ))}
-                  {dbState.posts.length === 0 && (
+                  {posts.length === 0 && (
                     <tr>
-                      <td
-                        className="p-4 text-center text-gray-400 border"
-                        colSpan={5}
-                      >
-                        No posts — click "Seed Mock Data" above
+                      <td className="p-4 text-center text-gray-400" colSpan={4}>
+                        Nenhum — clique em &quot;Popular dados mock&quot;
                       </td>
                     </tr>
                   )}
@@ -179,53 +160,48 @@ export default function DebugPage() {
             </div>
           </section>
 
-          {/* Matches table */}
+          {/* Matches */}
           <section>
-            <h2 className="font-semibold mb-2">
-              Matches ({dbState.matches.length})
+            <h2 className="font-semibold mb-2 text-sm">
+              Matchs ({matches.length})
             </h2>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-96 overflow-y-auto border rounded">
               <table className="w-full text-xs border-collapse">
-                <thead>
-                  <tr className="bg-gray-100">
+                <thead className="sticky top-0 bg-gray-100">
+                  <tr>
                     <th className="text-left p-2 border">Post A</th>
                     <th className="text-left p-2 border">Post B</th>
                     <th className="text-center p-2 border">Score</th>
-                    <th className="text-right p-2 border">Cash (A→B)</th>
+                    <th className="text-right p-2 border">Grana (A→B)</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {dbState.matches.map((m) => {
-                    const postA = dbState.posts.find(
-                      (p) => p.id === m.postAId
-                    );
-                    const postB = dbState.posts.find(
-                      (p) => p.id === m.postBId
-                    );
+                  {matches.map((m) => {
+                    const a = posts.find((p) => p.id === m.postAId);
+                    const b = posts.find((p) => p.id === m.postBId);
                     return (
                       <tr key={m.id} className="hover:bg-gray-50">
                         <td className="p-2 border">
-                          {postA?.title || m.postAId.slice(0, 8)}
+                          {a?.title || m.postAId.slice(0, 8)}
                         </td>
                         <td className="p-2 border">
-                          {postB?.title || m.postBId.slice(0, 8)}
+                          {b?.title || m.postBId.slice(0, 8)}
                         </td>
                         <td className="p-2 border text-center font-bold">
-                          {m.score}/100
+                          {m.score}%
                         </td>
                         <td className="p-2 border text-right">
-                          R$ {m.suggestedCashFromA.toLocaleString("pt-BR")}
+                          {m.suggestedCashFromA === 0
+                            ? "—"
+                            : `R$ ${m.suggestedCashFromA.toLocaleString("pt-BR")}`}
                         </td>
                       </tr>
                     );
                   })}
-                  {dbState.matches.length === 0 && (
+                  {matches.length === 0 && (
                     <tr>
-                      <td
-                        className="p-4 text-center text-gray-400 border"
-                        colSpan={4}
-                      >
-                        No matches found yet
+                      <td className="p-4 text-center text-gray-400" colSpan={4}>
+                        Nenhum match ainda
                       </td>
                     </tr>
                   )}

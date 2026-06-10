@@ -2,53 +2,106 @@
 
 import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import PostCard from "@/components/PostCard";
 import FilterBar from "@/components/FilterBar";
 import type { CarPost } from "@/lib/types";
 
 function HomeContent() {
   const [posts, setPosts] = useState<CarPost[]>([]);
+  const [user, setUser] = useState<{ id: string; name: string } | null>(null);
+  const [myPostCount, setMyPostCount] = useState(0);
+  const [myMatchCount, setMyMatchCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
 
-  const fetchPosts = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const qs = searchParams.toString();
-      const res = await fetch(`/api/posts${qs ? `?${qs}` : ""}`);
-      const data = await res.json();
-      setPosts(data.posts || []);
+      const [postsRes, authRes] = await Promise.all([
+        fetch(`/api/posts${qs ? `?${qs}` : ""}`),
+        fetch("/api/auth/me"),
+      ]);
+      const postsData = await postsRes.json();
+      const allPosts: CarPost[] = postsData.posts || [];
+      setPosts(allPosts);
+
+      if (authRes.ok) {
+        const authData = await authRes.json();
+        const u = authData.user;
+        setUser(u);
+
+        // Conta posts do usuário
+        const myPosts = allPosts.filter((p: CarPost) => p.userId === u.id);
+        setMyPostCount(myPosts.length);
+
+        // Conta matches pros posts do usuário
+        let matchTotal = 0;
+        await Promise.all(
+          myPosts.map(async (p: CarPost) => {
+            try {
+              const r = await fetch(`/api/posts/${p.id}/matches`);
+              if (r.ok) {
+                const d = await r.json();
+                matchTotal += (d.matches || []).length;
+              }
+            } catch {}
+          })
+        );
+        setMyMatchCount(matchTotal);
+      }
     } catch {
-      setPosts([]);
+      // ignore
     } finally {
       setLoading(false);
     }
   }, [searchParams]);
 
   useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
+    fetchData();
+  }, [fetchData]);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">CarMatch</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Find the perfect trade for your car
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">CarMatch</h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Troque seu carro com outras pessoas
+          </p>
+        </div>
+        {user && (
+          <div className="flex gap-3 text-sm">
+            <Link
+              href="/my-posts"
+              className="flex items-center gap-1 bg-gray-100 px-3 py-1.5 rounded hover:bg-gray-200 transition-colors"
+            >
+              📋 {myPostCount} anúncio{myPostCount !== 1 ? "s" : ""}
+            </Link>
+            {myMatchCount > 0 && (
+              <Link
+                href="/my-posts"
+                className="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1.5 rounded hover:bg-green-200 transition-colors"
+              >
+                🎯 {myMatchCount} match{myMatchCount !== 1 ? "s" : ""}
+              </Link>
+            )}
+          </div>
+        )}
       </div>
 
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<div>Carregando...</div>}>
         <FilterBar />
       </Suspense>
 
       {loading ? (
-        <div className="text-center py-16 text-gray-400">Loading...</div>
+        <div className="text-center py-16 text-gray-400">Carregando...</div>
       ) : posts.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
-          No cars posted yet.{" "}
+          Nenhum carro encontrado.{" "}
           <a href="/posts/new" className="text-blue-600 underline">
-            Be the first!
+            Seja o primeiro a anunciar!
           </a>
         </div>
       ) : (
@@ -66,7 +119,7 @@ export default function HomePage() {
   return (
     <Suspense
       fallback={
-        <div className="text-center py-16 text-gray-400">Loading...</div>
+        <div className="text-center py-16 text-gray-400">Carregando...</div>
       }
     >
       <HomeContent />

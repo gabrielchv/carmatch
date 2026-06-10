@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { CarPost, User } from "@/lib/types";
+import type { CarPost, User, DesiredVehicle } from "@/lib/types";
 
 interface MatchResult {
   match: {
@@ -12,6 +12,26 @@ interface MatchResult {
     status: string;
   };
   otherPost: CarPost | null;
+}
+
+/** Mostra de forma clara: "Você paga R$ X" ou "Você recebe R$ X" */
+function cashPill(adj: number, tol: number): string {
+  if (adj === 0 && tol === 0) return "Troca direta, sem grana";
+  const base =
+    adj > 0
+      ? `Você paga R$ ${adj.toLocaleString("pt-BR")}`
+      : adj < 0
+      ? `Você recebe R$ ${Math.abs(adj).toLocaleString("pt-BR")}`
+      : "Sem grana na troca";
+  if (tol > 0) return `${base} (±R$ ${tol.toLocaleString("pt-BR")})`;
+  return base;
+}
+
+function cashSimplified(val: number): string {
+  if (val === 0) return "troca direta";
+  return val > 0
+    ? `Recebe R$ ${val.toLocaleString("pt-BR")}`
+    : `Paga R$ ${Math.abs(val).toLocaleString("pt-BR")}`;
 }
 
 export default function PostDetailPage({
@@ -35,7 +55,7 @@ export default function PostDetailPage({
           fetch("/api/auth/me"),
         ]);
         if (!postRes.ok) {
-          setError("Post not found");
+          setError("Anúncio não encontrado");
           return;
         }
         const postData = await postRes.json();
@@ -46,14 +66,13 @@ export default function PostDetailPage({
           setUser(authData.user);
         }
 
-        // Fetch matches
         const matchRes = await fetch(`/api/posts/${id}/matches`);
         if (matchRes.ok) {
           const matchData = await matchRes.json();
           setMatches(matchData.matches || []);
         }
       } catch {
-        setError("Failed to load post");
+        setError("Erro ao carregar anúncio");
       } finally {
         setLoading(false);
       }
@@ -61,7 +80,7 @@ export default function PostDetailPage({
   }, [id]);
 
   const handleDelete = async () => {
-    if (!confirm("Delete this post?")) return;
+    if (!confirm("Excluir este anúncio?")) return;
     try {
       const res = await fetch(`/api/posts/${id}`, { method: "DELETE" });
       if (res.ok) {
@@ -69,98 +88,87 @@ export default function PostDetailPage({
         router.refresh();
       }
     } catch {
-      setError("Failed to delete");
+      setError("Erro ao excluir");
     }
   };
 
   if (loading) {
-    return <div className="text-center py-16 text-gray-400">Loading...</div>;
+    return <div className="text-center py-16 text-gray-400">Carregando...</div>;
   }
 
   if (error || !post) {
     return (
       <div className="text-center py-16 text-gray-500">
-        {error || "Post not found"}
+        {error || "Não encontrado"}
       </div>
     );
   }
 
   const isOwner = user?.id === post.userId;
-  const cashLabel =
-    post.desiredTrade.cashAdjustment === 0
-      ? "Direct trade (no cash)"
-      : post.desiredTrade.cashAdjustment > 0
-      ? `You pay R$ ${post.desiredTrade.cashAdjustment.toLocaleString("pt-BR")}`
-      : `You receive R$ ${Math.abs(post.desiredTrade.cashAdjustment).toLocaleString("pt-BR")}`;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      {/* Image Gallery */}
+      {/* Fotos */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
         {post.images.length > 0 ? (
           post.images.map((img, i) => (
             <img
               key={i}
               src={`/uploads/${img}`}
-              alt={`${post.title} photo ${i + 1}`}
+              alt={`${post.title} foto ${i + 1}`}
               className="w-full h-52 object-cover rounded-lg"
             />
           ))
         ) : (
           <div className="w-full h-52 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 col-span-2">
-            No photos
+            Sem fotos
           </div>
         )}
       </div>
 
-      {/* Title & Description */}
+      {/* Título + Descrição */}
       <h1 className="text-2xl font-bold mb-2">{post.title}</h1>
       {post.description && (
         <p className="text-gray-600 mb-4">{post.description}</p>
       )}
 
-      {/* Car Details */}
+      {/* Dados do carro */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <DetailBox label="Brand" value={post.car.brand} />
-        <DetailBox label="Model" value={post.car.model} />
-        <DetailBox label="Year" value={String(post.car.year)} />
-        <DetailBox
-          label="Estimated Value"
+        <InfoBox label="Marca" value={post.car.brand} />
+        <InfoBox label="Modelo" value={post.car.model} />
+        <InfoBox label="Ano" value={String(post.car.year)} />
+        <InfoBox
+          label="Valor estimado"
           value={`R$ ${post.car.estimatedValue.toLocaleString("pt-BR")}`}
         />
       </div>
 
-      {/* Desired Trade */}
+      {/* O que ele quer na troca */}
       <section className="border border-gray-200 rounded-lg p-4 mb-6">
-        <h2 className="font-semibold text-sm mb-2">Looking for</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-          <div>
-            <span className="text-gray-500">Brand:</span>{" "}
-            {post.desiredTrade.brand || "Any"}
-          </div>
-          <div>
-            <span className="text-gray-500">Model:</span>{" "}
-            {post.desiredTrade.model || "Any"}
-          </div>
-          <div>
-            <span className="text-gray-500">Year:</span>{" "}
-            {post.desiredTrade.yearMin || "Any"} -{" "}
-            {post.desiredTrade.yearMax || "Any"}
-          </div>
-          <div>
-            <span className="text-blue-600 font-medium">{cashLabel}</span>
-            {post.desiredTrade.cashAdjustmentTolerance > 0 && (
-              <span className="text-gray-400 text-xs block">
-                ±R$ {post.desiredTrade.cashAdjustmentTolerance.toLocaleString("pt-BR")} tolerance
-              </span>
-            )}
-          </div>
+        <h2 className="font-semibold text-sm mb-3">Quer trocar por</h2>
+        <div className="space-y-3">
+          {(post.desiredTrade.vehicles || []).map((v: DesiredVehicle, i: number) => (
+            <div key={i} className="bg-gray-50 rounded p-3 text-sm">
+              <p className="font-medium">
+                {v.brand}
+                {v.model ? ` ${v.model}` : ""}
+              </p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-gray-500">
+                {v.yearMin || v.yearMax ? (
+                  <span>Ano: {v.yearMin || "?"} – {v.yearMax || "?"}</span>
+                ) : null}
+                <span className="text-blue-600 font-medium">
+                  {cashPill(v.cashAdjustment, v.cashAdjustmentTolerance)}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Contact */}
+      {/* Contato */}
       <section className="border border-gray-200 rounded-lg p-4 mb-6">
-        <h2 className="font-semibold text-sm mb-2">Contact</h2>
+        <h2 className="font-semibold text-sm mb-2">Contato</h2>
         <div className="space-y-1 text-sm">
           {post.contactInfo.whatsapp && (
             <p>
@@ -189,75 +197,45 @@ export default function PostDetailPage({
         </div>
       </section>
 
-      {/* Matches (shown to non-owners if there's a match) */}
-      {!isOwner && matches.length > 0 && (
-        <section className="border border-green-200 bg-green-50 rounded-lg p-4 mb-6">
-          <h2 className="font-semibold text-green-700 mb-2">
-            🎯 Match Found!
-          </h2>
-          {matches.map((m) => (
-            <div key={m.match.id} className="text-sm space-y-1">
-              <p>
-                <strong>Score:</strong> {m.match.score}/100
-              </p>
-              {m.match.suggestedCashFromA !== 0 && (
-                <p>
-                  <strong>Suggested cash adjustment:</strong>{" "}
-                  {m.match.suggestedCashFromA > 0
-                    ? `You pay R$ ${Math.abs(m.match.suggestedCashFromA).toLocaleString("pt-BR")}`
-                    : `You receive R$ ${Math.abs(m.match.suggestedCashFromA).toLocaleString("pt-BR")}`}
-                </p>
-              )}
-              {m.otherPost && (
-                <a
-                  href={`/posts/${m.otherPost.id}`}
-                  className="text-blue-600 hover:underline inline-block mt-1"
-                >
-                  View matched post: {m.otherPost.title}
-                </a>
-              )}
-            </div>
-          ))}
-        </section>
-      )}
-
-      {/* Owner actions */}
+      {/* Dono pode excluir */}
       {isOwner && (
-        <div className="flex gap-3">
-          <button
-            onClick={handleDelete}
-            className="text-red-600 border border-red-300 px-4 py-2 rounded text-sm hover:bg-red-50 transition-colors"
-          >
-            Delete Post
-          </button>
-        </div>
+        <button
+          onClick={handleDelete}
+          className="text-red-600 border border-red-300 px-4 py-2 rounded text-sm hover:bg-red-50 transition-colors"
+        >
+          Excluir anúncio
+        </button>
       )}
 
-      {matches.length > 0 && isOwner && (
+      {/* Matchs visíveis só pro dono */}
+      {isOwner && matches.length > 0 && (
         <section className="border border-green-200 bg-green-50 rounded-lg p-4 mt-4">
-          <h2 className="font-semibold text-green-700 mb-2">
-            🎯 {matches.length} Match{matches.length > 1 ? "es" : ""} Found
+          <h2 className="font-semibold text-green-700 mb-3">
+            🎯 {matches.length} match{matches.length > 1 ? "s" : ""} encontrado
+            {matches.length > 1 ? "s" : ""}!
           </h2>
           <div className="space-y-3">
             {matches.map((m) => (
-              <div key={m.match.id} className="text-sm border-b border-green-100 pb-2 last:border-0">
-                <p>
-                  <strong>Score:</strong> {m.match.score}/100
+              <div
+                key={m.match.id}
+                className="text-sm border-b border-green-100 pb-2 last:border-b-0"
+              >
+                <p className="font-medium">
+                  {m.match.score}% compatível
                 </p>
-                <p>
-                  <strong>Cash:</strong>{" "}
+                <p className="text-blue-600 font-medium">
                   {m.match.suggestedCashFromA > 0
-                    ? `They pay R$ ${Math.abs(m.match.suggestedCashFromA).toLocaleString("pt-BR")}`
+                    ? `Você recebe R$ ${Math.abs(m.match.suggestedCashFromA).toLocaleString("pt-BR")}`
                     : m.match.suggestedCashFromA < 0
-                    ? `You pay R$ ${Math.abs(m.match.suggestedCashFromA).toLocaleString("pt-BR")}`
-                    : "No cash adjustment"}
+                    ? `Você paga R$ ${Math.abs(m.match.suggestedCashFromA).toLocaleString("pt-BR")}`
+                    : "Troca direta, sem grana"}
                 </p>
                 {m.otherPost && (
                   <a
                     href={`/posts/${m.otherPost.id}`}
                     className="text-blue-600 hover:underline"
                   >
-                    View: {m.otherPost.title} ({m.otherPost.car.brand}{" "}
+                    Ver: {m.otherPost.title} ({m.otherPost.car.brand}{" "}
                     {m.otherPost.car.model} {m.otherPost.car.year})
                   </a>
                 )}
@@ -270,7 +248,7 @@ export default function PostDetailPage({
   );
 }
 
-function DetailBox({ label, value }: { label: string; value: string }) {
+function InfoBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-gray-50 rounded p-3">
       <p className="text-xs text-gray-500">{label}</p>

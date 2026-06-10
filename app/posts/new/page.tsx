@@ -17,12 +17,12 @@ export default function NewPostPage() {
   }, [router]);
 
   if (checking) {
-    return <div className="text-center py-16 text-gray-400">Checking...</div>;
+    return <div className="text-center py-16 text-gray-400">Verificando...</div>;
   }
 
   return (
     <div className="max-w-2xl mx-auto mt-8 px-4">
-      <h1 className="text-2xl font-bold mb-6">Post Your Car</h1>
+      <h1 className="text-2xl font-bold mb-6">Anunciar meu carro</h1>
       <PostForm />
     </div>
   );

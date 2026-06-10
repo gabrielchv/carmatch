@@ -1,13 +1,15 @@
 import Link from "next/link";
 import type { CarPost } from "@/lib/types";
 
+function cashLabelShort(adj: number): string {
+  if (adj === 0) return "troca direta";
+  return adj > 0
+    ? `+ R$ ${adj.toLocaleString("pt-BR")}`
+    : `- R$ ${Math.abs(adj).toLocaleString("pt-BR")}`;
+}
+
 export default function PostCard({ post }: { post: CarPost }) {
-  const cashLabel =
-    post.desiredTrade.cashAdjustment === 0
-      ? "Direct trade (no cash)"
-      : post.desiredTrade.cashAdjustment > 0
-      ? `You pay +R$ ${post.desiredTrade.cashAdjustment.toLocaleString("pt-BR")}`
-      : `You receive R$ ${Math.abs(post.desiredTrade.cashAdjustment).toLocaleString("pt-BR")}`;
+  const firstVehicle = post.desiredTrade.vehicles?.[0];
 
   return (
     <Link
@@ -22,10 +24,10 @@ export default function PostCard({ post }: { post: CarPost }) {
         />
       ) : (
         <div className="w-full h-40 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-          No photo
+          Sem foto
         </div>
       )}
-      <div className="p-3 space-y-1.5">
+      <div className="p-3 space-y-1">
         <h2 className="font-semibold text-sm truncate">{post.title}</h2>
         <p className="text-xs text-gray-500">
           {post.car.brand} {post.car.model} {post.car.year}
@@ -33,11 +35,17 @@ export default function PostCard({ post }: { post: CarPost }) {
         <p className="text-xs text-gray-500">
           R$ {post.car.estimatedValue.toLocaleString("pt-BR")}
         </p>
-        <p className="text-xs text-blue-600 font-medium">{cashLabel}</p>
-        {post.desiredTrade.brand && (
-          <p className="text-xs text-gray-400">
-            Want: {post.desiredTrade.brand}
-            {post.desiredTrade.model ? ` ${post.desiredTrade.model}` : ""}
+        {firstVehicle && (
+          <p className="text-xs text-blue-600 font-medium">
+            Quer {firstVehicle.brand}
+            {firstVehicle.model ? ` ${firstVehicle.model}` : ""}
+            {" · "}
+            {cashLabelShort(firstVehicle.cashAdjustment)}
+          </p>
+        )}
+        {post.desiredTrade.vehicles && post.desiredTrade.vehicles.length > 1 && (
+          <p className="text-[10px] text-gray-400">
+            +{post.desiredTrade.vehicles.length - 1} opção(ões)
           </p>
         )}
       </div>

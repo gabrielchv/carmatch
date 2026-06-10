@@ -52,7 +52,7 @@ export default function Navbar() {
 
         <div className="flex items-center gap-4 text-sm">
           <Link href="/" className="hover:text-blue-600 transition-colors">
-            Browse
+            Ver carros
           </Link>
           {loading ? (
             <span className="text-gray-400">...</span>
@@ -62,20 +62,20 @@ export default function Navbar() {
                 href="/posts/new"
                 className="hover:text-blue-600 transition-colors"
               >
-                Post Car
+                Anunciar
               </Link>
               <Link
                 href="/my-posts"
                 className="hover:text-blue-600 transition-colors"
               >
-                My Posts
+                Meus anúncios
               </Link>
               <span className="text-gray-500">{user.name}</span>
               <button
                 onClick={handleLogout}
                 className="text-red-500 hover:text-red-700 transition-colors"
               >
-                Logout
+                Sair
               </button>
             </>
           ) : (
@@ -83,7 +83,7 @@ export default function Navbar() {
               href="/auth"
               className="bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 transition-colors"
             >
-              Login
+              Entrar
             </Link>
           )}
         </div>

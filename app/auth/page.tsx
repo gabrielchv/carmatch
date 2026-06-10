@@ -24,14 +24,14 @@ export default function AuthPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Login failed");
+        setError(data.error || "Erro ao entrar");
         return;
       }
 
       router.push("/my-posts");
       router.refresh();
     } catch {
-      setError("Connection error");
+      setError("Erro de conexão");
     } finally {
       setLoading(false);
     }
@@ -39,17 +39,20 @@ export default function AuthPage() {
 
   return (
     <div className="max-w-sm mx-auto mt-16 px-4">
-      <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
+      <h1 className="text-2xl font-bold mb-2 text-center">Entrar</h1>
+      <p className="text-sm text-gray-500 text-center mb-6">
+        Só precisa de nome e email pra começar
+      </p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Name</label>
+          <label className="block text-sm font-medium mb-1">Nome</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
             className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-            placeholder="Your name"
+            placeholder="Seu nome"
           />
         </div>
         <div>
@@ -60,16 +63,16 @@ export default function AuthPage() {
             onChange={(e) => setEmail(e.target.value)}
             required
             className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
-            placeholder="your@email.com"
+            placeholder="seu@email.com"
           />
         </div>
         {error && <p className="text-red-500 text-sm">{error}</p>}
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm"
         >
-          {loading ? "Logging in..." : "Login"}
+          {loading ? "Entrando..." : "Entrar"}
         </button>
       </form>
     </div>

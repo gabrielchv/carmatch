@@ -30,7 +30,6 @@ export default function MyPostsPage() {
         const authData = await authRes.json();
         setUser(authData.user);
 
-        // Fetch all posts and filter by user
         const postsRes = await fetch("/api/posts");
         const postsData = await postsRes.json();
         const userPosts = (postsData.posts || []).filter(
@@ -38,7 +37,6 @@ export default function MyPostsPage() {
         );
         setPosts(userPosts);
 
-        // Fetch matches for each post
         const matchPromises = userPosts.map(async (post: CarPost) => {
           const res = await fetch(`/api/posts/${post.id}/matches`);
           if (res.ok) {
@@ -63,24 +61,37 @@ export default function MyPostsPage() {
   }, [router]);
 
   if (loading) {
-    return <div className="text-center py-16 text-gray-400">Loading...</div>;
+    return <div className="text-center py-16 text-gray-400">Carregando...</div>;
   }
 
   if (!user) return null;
 
+  const totalMatches = Object.values(matchesMap).reduce(
+    (acc, m) => acc + m.length,
+    0
+  );
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-2">My Posts</h1>
-      <p className="text-gray-500 text-sm mb-6">Welcome, {user.name}!</p>
+      <h1 className="text-2xl font-bold mb-1">Meus anúncios</h1>
+      <p className="text-gray-500 text-sm mb-6">
+        Olá, {user.name}!{" "}
+        {totalMatches > 0 && (
+          <span className="text-green-600 font-medium">
+            · {totalMatches} match{totalMatches > 1 ? "s" : ""} encontrado
+            {totalMatches > 1 ? "s" : ""}!
+          </span>
+        )}
+      </p>
 
       {posts.length === 0 ? (
         <div className="text-center py-16 text-gray-400 border border-dashed border-gray-300 rounded-lg">
-          <p>You haven&apos;t posted any cars yet.</p>
+          <p>Você ainda não anunciou nenhum carro.</p>
           <a
             href="/posts/new"
             className="text-blue-600 hover:underline text-sm mt-2 inline-block"
           >
-            Post your first car →
+            Anunciar meu carro →
           </a>
         </div>
       ) : (
@@ -105,13 +116,11 @@ export default function MyPostsPage() {
                       />
                     ) : (
                       <div className="w-20 h-16 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-xs">
-                        No photo
+                        Sem foto
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <h2 className="font-semibold text-sm">
-                        {post.title}
-                      </h2>
+                      <h2 className="font-semibold text-sm">{post.title}</h2>
                       <p className="text-xs text-gray-500">
                         {post.car.brand} {post.car.model} {post.car.year}
                       </p>
@@ -122,7 +131,7 @@ export default function MyPostsPage() {
                     {postMatches.length > 0 && (
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-medium shrink-0">
                         {postMatches.length} match
-                        {postMatches.length > 1 ? "es" : ""}
+                        {postMatches.length > 1 ? "s" : ""}
                       </span>
                     )}
                   </div>
@@ -131,7 +140,7 @@ export default function MyPostsPage() {
                 {postMatches.length > 0 && (
                   <div className="border-t border-gray-100 px-4 py-3 space-y-2">
                     <p className="text-xs font-medium text-gray-500">
-                      Matches:
+                      Matchs encontrados:
                     </p>
                     {postMatches.map((m) => (
                       <MatchCard

@@ -1,38 +1,30 @@
-import { readData, addItem, writeData, deleteItem } from "./db";
+import { readData, writeData } from "./db";
 import { generateId, nowISO } from "./utils";
-import type { CarPost, Match } from "./types";
+import type { CarPost, Match, DesiredVehicle } from "./types";
 
 /**
- * Checks if a desired trade matches an offered car.
+ * Checks if a single DesiredVehicle matches an offered car.
  */
-function carMatchesCriteria(
+function vehicleMatchesCar(
   car: CarPost["car"],
-  desired: CarPost["desiredTrade"]
+  want: DesiredVehicle
 ): boolean {
-  if (desired.brand && car.brand.toLowerCase() !== desired.brand.toLowerCase()) {
+  if (want.brand && car.brand.toLowerCase() !== want.brand.toLowerCase()) {
     return false;
   }
-  if (
-    desired.model &&
-    car.model.toLowerCase() !== desired.model.toLowerCase()
-  ) {
+  if (want.model && car.model.toLowerCase() !== want.model.toLowerCase()) {
     return false;
   }
-  if (desired.yearMin && car.year < desired.yearMin) return false;
-  if (desired.yearMax && car.year > desired.yearMax) return false;
+  if (want.yearMin && car.year < want.yearMin) return false;
+  if (want.yearMax && car.year > want.yearMax) return false;
   return true;
 }
 
 interface CashRange {
-  min: number; // poster will pay at least this much (negative = wants to receive)
-  max: number; // poster will pay at most this much (negative = wants to receive)
+  min: number;
+  max: number;
 }
 
-/**
- * Convert a cash adjustment + tolerance into a payable range.
- * Positive cashAdjustment = poster pays.
- * Negative cashAdjustment = poster receives.
- */
 function getCashRange(adjustment: number, tolerance: number): CashRange {
   return {
     min: adjustment - tolerance,
@@ -41,110 +33,89 @@ function getCashRange(adjustment: number, tolerance: number): CashRange {
 }
 
 /**
- * Check if two cash ranges are compatible and return the suggested transfer.
- *
- * @returns null if incompatible, or the optimal cash amount A should pay B
- *          (negative means B pays A)
+ * @returns null if incompatível, ou o valor sugerido que A paga para B
+ *          (negativo = B paga A)
  */
 function cashCompatible(
   rangeA: CashRange,
   rangeB: CashRange
 ): number | null {
-  // Case 1: A pays, B receives (A.adj >= 0, B.adj <= 0)
-  // A can pay between minA and maxA (both positive or zero)
-  // B wants to receive (their adjustment is negative or zero)
-  // B's perspective: they receive between -maxB and -minB (positive amounts)
+  // Caso 1: A paga (rangeA >= 0), B recebe (rangeB <= 0)
   if (rangeA.min >= 0 && rangeB.max <= 0) {
-    // A pays in [minA, maxA], B receives in [-maxB, -minB]
-    const minA = rangeA.min;
-    const maxA = rangeA.max;
     const bReceiveMin = -rangeB.max;
     const bReceiveMax = -rangeB.min;
-    // Overlap check: A can pay at least what B minimally wants to receive
-    if (maxA >= bReceiveMin && minA <= bReceiveMax) {
-      return Math.round((Math.max(minA, bReceiveMin) + Math.min(maxA, bReceiveMax)) / 2);
+    if (rangeA.max >= bReceiveMin && rangeA.min <= bReceiveMax) {
+      return Math.round(
+        (Math.max(rangeA.min, bReceiveMin) +
+          Math.min(rangeA.max, bReceiveMax)) /
+          2
+      );
     }
     return null;
   }
 
-  // Case 2: A receives, B pays (A.adj <= 0, B.adj >= 0)
+  // Caso 2: A recebe (rangeA <= 0), B paga (rangeB >= 0)
   if (rangeA.max <= 0 && rangeB.min >= 0) {
     const aReceiveMin = -rangeA.max;
     const aReceiveMax = -rangeA.min;
     if (rangeB.max >= aReceiveMin && rangeB.min <= aReceiveMax) {
-      // B pays A
       const suggested = Math.round(
-        (Math.max(rangeB.min, aReceiveMin) + Math.min(rangeB.max, aReceiveMax)) / 2
+        (Math.max(rangeB.min, aReceiveMin) +
+          Math.min(rangeB.max, aReceiveMax)) /
+          2
       );
-      return -suggested; // negative = B pays A
+      return -suggested;
     }
     return null;
   }
 
-  // Case 3: Both want to pay (both adjustments >= 0)
-  // Not compatible - both expect the other to receive cash
-  // But can make it work if ranges cross (one pays, other also pays = no match)
-  if (rangeA.min >= 0 && rangeB.min >= 0) {
-    return null;
-  }
-
-  // Case 4: Both want to receive (both adjustments <= 0)
-  // Not compatible - both expect the other to pay
-  if (rangeA.max <= 0 && rangeB.max <= 0) {
-    return null;
-  }
-
-  // Case 5: A pays, B pays not enough / mixed ranges crossing zero
-  // This is complex for v0 - treat as no match
+  // Ambos querem pagar ou ambos querem receber — incompatível
   return null;
 }
 
-function calculateScore(
-  postA: CarPost,
-  postB: CarPost,
+/**
+ * Calcula a pontuação de um match entre dois vehicles desejados específicos.
+ * Retorna score 0–100.
+ */
+function calculateVehicleScore(
+  carA: CarPost["car"],
+  carB: CarPost["car"],
+  wantA: DesiredVehicle,  // A deseja B
+  wantB: DesiredVehicle,  // B deseja A
   suggestedCash: number | null
 ): number {
   let score = 0;
 
-  // Car match score (max 40)
-  const aBrand = postA.desiredTrade.brand?.toLowerCase();
-  const bBrand = postB.desiredTrade.brand?.toLowerCase();
-  const aModel = postA.desiredTrade.model?.toLowerCase();
-  const bModel = postB.desiredTrade.model?.toLowerCase();
+  // Car match (max 40)
+  const aExact =
+    wantA.brand.toLowerCase() === carB.brand.toLowerCase() &&
+    (!wantA.model ||
+      wantA.model.toLowerCase() === carB.model.toLowerCase());
+  const aBrand =
+    wantA.brand.toLowerCase() === carB.brand.toLowerCase();
+  const bExact =
+    wantB.brand.toLowerCase() === carA.brand.toLowerCase() &&
+    (!wantB.model ||
+      wantB.model.toLowerCase() === carA.model.toLowerCase());
+  const bBrand =
+    wantB.brand.toLowerCase() === carA.brand.toLowerCase();
 
-  // Check A's desired vs B's offered
-  const aDesiresExact =
-    aBrand === postB.car.brand.toLowerCase() &&
-    (!aModel || aModel === postB.car.model.toLowerCase());
-  const aDesiresBrand = aBrand === postB.car.brand.toLowerCase();
-
-  // Check B's desired vs A's offered
-  const bDesiresExact =
-    bBrand === postA.car.brand.toLowerCase() &&
-    (!bModel || bModel === postA.car.model.toLowerCase());
-  const bDesiresBrand = bBrand === postA.car.brand.toLowerCase();
-
-  // Both sides want exact match
-  if (aDesiresExact && bDesiresExact) score += 40;
-  // Both sides want at least brand match
-  else if (aDesiresBrand && bDesiresBrand) score += 20;
-  // Only one side matches
-  else if (aDesiresExact || bDesiresExact) score += 15;
-  else if (aDesiresBrand || bDesiresBrand) score += 10;
+  if (aExact && bExact) score += 40;
+  else if (aExact && bBrand) score += 30;
+  else if (bExact && aBrand) score += 30;
+  else if (aBrand && bBrand) score += 20;
+  else if (aExact || bExact) score += 15;
+  else if (aBrand || bBrand) score += 10;
 
   // Year proximity (max 20)
-  const yearDiffA = postB.car.year - (postA.desiredTrade.yearMin ?? 0) +
-    (postA.desiredTrade.yearMax ?? 9999) - postB.car.year; // simplified: mid-range proximity
-  const yearDiffB = postA.car.year - (postB.desiredTrade.yearMin ?? 0) +
-    (postB.desiredTrade.yearMax ?? 9999) - postA.car.year;
-
-  // Use range center proximity
-  const centerA = postA.desiredTrade.yearMin && postA.desiredTrade.yearMax
-    ? (postA.desiredTrade.yearMin + postA.desiredTrade.yearMax) / 2
-    : null;
-  const centerB = postB.desiredTrade.yearMin && postB.desiredTrade.yearMax
-    ? (postB.desiredTrade.yearMin + postB.desiredTrade.yearMax) / 2
-    : null;
+  const centerA =
+    wantA.yearMin && wantA.yearMax
+      ? (wantA.yearMin + wantA.yearMax) / 2
+      : null;
+  const centerB =
+    wantB.yearMin && wantB.yearMax
+      ? (wantB.yearMin + wantB.yearMax) / 2
+      : null;
 
   if (centerA !== null && centerB !== null) {
     const diff = Math.abs(centerA - centerB);
@@ -152,12 +123,11 @@ function calculateScore(
     else if (diff <= 5) score += 10;
     else if (diff <= 10) score += 5;
   } else {
-    score += 10; // no year constraints = partial benefit
+    score += 10;
   }
 
   // Cash alignment (max 40)
   if (suggestedCash !== null) {
-    // Smaller cash = more aligned
     const absCash = Math.abs(suggestedCash);
     if (absCash <= 1000) score += 40;
     else if (absCash <= 5000) score += 30;
@@ -169,9 +139,67 @@ function calculateScore(
   return Math.min(score, 100);
 }
 
+interface VehicleMatchResult {
+  wantA: DesiredVehicle;
+  wantB: DesiredVehicle;
+  score: number;
+  suggestedCash: number;
+}
+
 /**
- * Run matching across all active posts.
- * For every unique pair, checks compatibility and creates/updates Match records.
+ * Para um par de posts (A, B), encontra a melhor combinação de veículos.
+ */
+function findBestVehicleMatch(
+  postA: CarPost,
+  postB: CarPost
+): VehicleMatchResult | null {
+  const aVehicles = postA.desiredTrade.vehicles || [];
+  const bVehicles = postB.desiredTrade.vehicles || [];
+
+  let best: VehicleMatchResult | null = null;
+
+  for (const wantA of aVehicles) {
+    // A deseja B? O veículo que A quer equivale ao carro que B oferece?
+    if (!vehicleMatchesCar(postB.car, wantA)) continue;
+
+    for (const wantB of bVehicles) {
+      // B deseja A?
+      if (!vehicleMatchesCar(postA.car, wantB)) continue;
+
+      // Compatibilidade de grana
+      const rangeA = getCashRange(
+        wantA.cashAdjustment,
+        wantA.cashAdjustmentTolerance
+      );
+      const rangeB = getCashRange(
+        wantB.cashAdjustment,
+        wantB.cashAdjustmentTolerance
+      );
+
+      const suggestedCash = cashCompatible(rangeA, rangeB);
+      if (suggestedCash === null) continue;
+
+      const score = calculateVehicleScore(
+        postA.car,
+        postB.car,
+        wantA,
+        wantB,
+        suggestedCash
+      );
+
+      if (!best || score > best.score) {
+        best = { wantA, wantB, score, suggestedCash };
+      }
+    }
+  }
+
+  return best;
+}
+
+/**
+ * Roda o matching entre todos os posts ativos.
+ * Match é criado quando dois posts têm pelo menos um veículo compatível
+ * cada um com o carro do outro, E a grana é compatível.
  */
 export function runMatching(): Match[] {
   const posts = readData<CarPost>("posts").filter((p) => p.isActive);
@@ -183,28 +211,9 @@ export function runMatching(): Match[] {
       const postA = posts[i];
       const postB = posts[j];
 
-      // Check mutual car compatibility
-      const aDesiresB = carMatchesCriteria(postB.car, postA.desiredTrade);
-      const bDesiresA = carMatchesCriteria(postA.car, postB.desiredTrade);
+      const best = findBestVehicleMatch(postA, postB);
+      if (!best) continue;
 
-      if (!aDesiresB || !bDesiresA) continue;
-
-      // Check cash compatibility
-      const rangeA = getCashRange(
-        postA.desiredTrade.cashAdjustment,
-        postA.desiredTrade.cashAdjustmentTolerance
-      );
-      const rangeB = getCashRange(
-        postB.desiredTrade.cashAdjustment,
-        postB.desiredTrade.cashAdjustmentTolerance
-      );
-
-      const suggestedCash = cashCompatible(rangeA, rangeB);
-      if (suggestedCash === null) continue;
-
-      const score = calculateScore(postA, postB, suggestedCash);
-
-      // Check if match already exists
       const existingIndex = matches.findIndex(
         (m) =>
           (m.postAId === postA.id && m.postBId === postB.id) ||
@@ -215,8 +224,8 @@ export function runMatching(): Match[] {
         id: existingIndex >= 0 ? matches[existingIndex].id : generateId(),
         postAId: postA.id,
         postBId: postB.id,
-        score,
-        suggestedCashFromA: suggestedCash,
+        score: best.score,
+        suggestedCashFromA: best.suggestedCash,
         status: "pending",
         createdAt: nowISO(),
       };
@@ -230,7 +239,7 @@ export function runMatching(): Match[] {
     }
   }
 
-  // Remove stale matches for posts that no longer exist
+  // Remove matches órfãos
   const activePostIds = new Set(posts.map((p) => p.id));
   matches = matches.filter(
     (m) => activePostIds.has(m.postAId) && activePostIds.has(m.postBId)

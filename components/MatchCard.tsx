@@ -7,6 +7,13 @@ interface MatchCardProps {
   currentUserId: string;
 }
 
+function cashSimplified(val: number): string {
+  if (val === 0) return "troca direta, sem grana";
+  return val > 0
+    ? `Você recebe R$ ${val.toLocaleString("pt-BR")}`
+    : `Você paga R$ ${Math.abs(val).toLocaleString("pt-BR")}`;
+}
+
 export default function MatchCard({
   match,
   otherPost,
@@ -14,20 +21,11 @@ export default function MatchCard({
 }: MatchCardProps) {
   if (!otherPost) return null;
 
-  // Determine cash direction relative to current user
-  // If current user owns postA, cash is from A
-  // If current user owns postB, cash is from B (negate)
+  // Determina direção do dinheiro relativa ao usuário logado
   const isPostA = match.postAId === otherPost.id;
-  const cashRelative = isPostA
-    ? -match.suggestedCashFromA // other post is A, so cash direction is reversed
-    : match.suggestedCashFromA; // other post is B
-
-  const cashLabel =
-    cashRelative === 0
-      ? "No cash adjustment"
-      : cashRelative > 0
-      ? `You receive R$ ${cashRelative.toLocaleString("pt-BR")}`
-      : `You pay R$ ${Math.abs(cashRelative).toLocaleString("pt-BR")}`;
+  const cashRel = isPostA
+    ? -match.suggestedCashFromA
+    : match.suggestedCashFromA;
 
   return (
     <div className="border border-green-200 rounded-lg p-4 bg-green-50">
@@ -51,16 +49,18 @@ export default function MatchCard({
                 : "bg-gray-200 text-gray-700"
             }`}
           >
-            {match.score}/100
+            {match.score}% compatível
           </span>
         </div>
       </div>
-      <p className="text-xs text-blue-600 mt-2">{cashLabel}</p>
+      <p className="text-xs text-blue-600 font-medium mt-2">
+        {cashSimplified(cashRel)}
+      </p>
       <Link
         href={`/posts/${otherPost.id}`}
         className="text-xs text-blue-600 hover:underline inline-block mt-1"
       >
-        View details →
+        Ver detalhes →
       </Link>
     </div>
   );

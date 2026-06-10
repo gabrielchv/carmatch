@@ -3,7 +3,7 @@ import { addItem, readData } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { generateId, nowISO } from "@/lib/utils";
 import { runMatching } from "@/lib/matching";
-import type { CarPost } from "@/lib/types";
+import type { CarPost, DesiredVehicle } from "@/lib/types";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -11,32 +11,28 @@ const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  const q = searchParams.get("q")?.toLowerCase();
   const minPrice = searchParams.get("minPrice");
   const maxPrice = searchParams.get("maxPrice");
-  const brand = searchParams.get("brand");
-  const model = searchParams.get("model");
 
   let posts = readData<CarPost>("posts").filter((p) => p.isActive);
 
-  if (brand) {
+  // Busca geral: procura em título, descrição, marca e modelo
+  if (q) {
     posts = posts.filter(
-      (p) => p.car.brand.toLowerCase() === brand.toLowerCase()
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        p.car.brand.toLowerCase().includes(q) ||
+        p.car.model.toLowerCase().includes(q)
     );
   }
-  if (model) {
-    posts = posts.filter(
-      (p) => p.car.model.toLowerCase() === model.toLowerCase()
-    );
-  }
+
   if (minPrice) {
-    posts = posts.filter(
-      (p) => p.car.estimatedValue >= Number(minPrice)
-    );
+    posts = posts.filter((p) => p.car.estimatedValue >= Number(minPrice));
   }
   if (maxPrice) {
-    posts = posts.filter(
-      (p) => p.car.estimatedValue <= Number(maxPrice)
-    );
+    posts = posts.filter((p) => p.car.estimatedValue <= Number(maxPrice));
   }
 
   posts.sort(
@@ -49,34 +45,44 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
   try {
     const formData = await request.formData();
 
-    // Extract text fields
     const title = formData.get("title") as string;
     const description = (formData.get("description") as string) || "";
     const brand = formData.get("brand") as string;
     const model = formData.get("model") as string;
     const year = Number(formData.get("year"));
     const estimatedValue = Number(formData.get("estimatedValue"));
-    const desiredBrand = (formData.get("desiredBrand") as string) || undefined;
-    const desiredModel = (formData.get("desiredModel") as string) || undefined;
-    const desiredYearMin = formData.get("desiredYearMin")
-      ? Number(formData.get("desiredYearMin"))
-      : undefined;
-    const desiredYearMax = formData.get("desiredYearMax")
-      ? Number(formData.get("desiredYearMax"))
-      : undefined;
-    const cashAdjustment = Number(formData.get("cashAdjustment")) || 0;
-    const cashAdjustmentTolerance =
-      Number(formData.get("cashAdjustmentTolerance")) || 0;
     const whatsapp = (formData.get("whatsapp") as string) || undefined;
     const email = (formData.get("email") as string) || undefined;
 
-    // Handle image uploads
+    // Monta array de vehicles a partir dos fields do form
+    const vehicleBrands = formData.getAll("vBrand") as string[];
+    const vehicleModels = formData.getAll("vModel") as string[];
+    const vehicleYearMin = formData.getAll("vYearMin") as string[];
+    const vehicleYearMax = formData.getAll("vYearMax") as string[];
+    const vehicleCashAdj = formData.getAll("vCashAdj") as string[];
+    const vehicleTolerance = formData.getAll("vTolerance") as string[];
+
+    const vehicles: DesiredVehicle[] = [];
+    for (let i = 0; i < vehicleBrands.length; i++) {
+      const vb = vehicleBrands[i]?.trim();
+      if (!vb) continue; // pula linhas sem marca
+      vehicles.push({
+        brand: vb,
+        model: vehicleModels[i]?.trim() || "",
+        yearMin: vehicleYearMin[i] ? Number(vehicleYearMin[i]) : undefined,
+        yearMax: vehicleYearMax[i] ? Number(vehicleYearMax[i]) : undefined,
+        cashAdjustment: Number(vehicleCashAdj[i]) || 0,
+        cashAdjustmentTolerance: Number(vehicleTolerance[i]) || 0,
+      });
+    }
+
+    // Salva imagens
     const imageFiles = formData.getAll("images") as File[];
     const savedImages: string[] = [];
 
@@ -100,14 +106,7 @@ export async function POST(request: Request) {
       title,
       description,
       car: { brand, model, year, estimatedValue },
-      desiredTrade: {
-        brand: desiredBrand,
-        model: desiredModel,
-        yearMin: desiredYearMin,
-        yearMax: desiredYearMax,
-        cashAdjustment,
-        cashAdjustmentTolerance,
-      },
+      desiredTrade: { vehicles },
       contactInfo: { whatsapp, email },
       images: savedImages,
       createdAt: nowISO(),
@@ -116,14 +115,14 @@ export async function POST(request: Request) {
 
     addItem("posts", post);
 
-    // Run matching algorithm against all posts
-    runMatching();
+    // Roda matching automaticamente
+    const newMatches = runMatching();
 
-    return NextResponse.json({ post }, { status: 201 });
+    return NextResponse.json({ post, newMatches: newMatches.length }, { status: 201 });
   } catch (error) {
-    console.error("Create post error:", error);
+    console.error("Erro ao criar post:", error);
     return NextResponse.json(
-      { error: "Failed to create post" },
+      { error: "Erro ao criar anúncio" },
       { status: 500 }
     );
   }

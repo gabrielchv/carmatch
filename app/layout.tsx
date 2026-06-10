@@ -3,8 +3,8 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "CarMatch - Brazilian Car Trading",
-  description: "Find the perfect car trade match",
+  title: "CarMatch - Troque seu carro",
+  description: "Plataforma de troca de carros — encontre o match perfeito pro seu veículo",
 };
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="pt-BR" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-gray-50 text-gray-900">
         <Navbar />
         <main className="flex-1">{children}</main>

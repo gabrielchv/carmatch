@@ -1,9 +1,9 @@
 [
   {
-    "id": "22f54ed9-adeb-41a2-9f7d-f87837a53443",
-    "userId": "a5650312-1316-47b9-b841-0631af3df8c6",
+    "id": "849c968b-f3c4-4813-8258-52d90eaebe6b",
+    "userId": "6ea5ae58-5f81-42e6-a695-d50887a359a5",
     "title": "Honda Fit 2008 - Excelente estado",
-    "description": "Honda Fit 2008 completo, ar condicionado, direção hidráulica, revisões em dia.",
+    "description": "Completo, ar condicionado, direção hidráulica, revisões em dia.",
     "car": {
       "brand": "Honda",
       "model": "Fit",
@@ -11,26 +11,30 @@
       "estimatedValue": 25000
     },
     "desiredTrade": {
-      "brand": "Toyota",
-      "model": "Prius",
-      "yearMin": 2008,
-      "yearMax": 2011,
-      "cashAdjustment": 5000,
-      "cashAdjustmentTolerance": 3000
+      "vehicles": [
+        {
+          "brand": "Toyota",
+          "model": "Prius",
+          "yearMin": 2008,
+          "yearMax": 2011,
+          "cashAdjustment": 5000,
+          "cashAdjustmentTolerance": 3000
+        }
+      ]
     },
     "contactInfo": {
       "whatsapp": "+5511999999991",
       "email": "carlos@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-09T19:44:49.784Z",
+    "createdAt": "2026-06-09T21:59:48.198Z",
     "isActive": true
   },
   {
-    "id": "9799c112-4f65-4743-b031-5976a9f061dd",
-    "userId": "d593518f-eadc-4731-b1b9-8503607eac54",
+    "id": "49f97b42-b434-4452-b7f0-933ff6e23b56",
+    "userId": "e34b2577-3391-40cb-b166-72c6e93fd94d",
     "title": "Toyota Prius 2009 - Híbrido econômico",
-    "description": "Prius 2009, bateria em ótimo estado, média de 18km/l, único dono.",
+    "description": "Bateria em ótimo estado, média de 18km/l, único dono.",
     "car": {
       "brand": "Toyota",
       "model": "Prius",
@@ -38,26 +42,30 @@
       "estimatedValue": 35000
     },
     "desiredTrade": {
-      "brand": "Honda",
-      "model": "Fit",
-      "yearMin": 2006,
-      "yearMax": 2010,
-      "cashAdjustment": -3000,
-      "cashAdjustmentTolerance": 3000
+      "vehicles": [
+        {
+          "brand": "Honda",
+          "model": "Fit",
+          "yearMin": 2006,
+          "yearMax": 2010,
+          "cashAdjustment": -3000,
+          "cashAdjustmentTolerance": 3000
+        }
+      ]
     },
     "contactInfo": {
       "whatsapp": "+5511999999992",
       "email": "ana@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-09T19:44:49.784Z",
+    "createdAt": "2026-06-09T21:59:48.198Z",
     "isActive": true
   },
   {
-    "id": "6b755618-9730-46cd-921b-7f771a6b13bd",
-    "userId": "414bce0b-226d-493b-9b23-9987f91a308b",
+    "id": "c3cc06b2-300b-4386-b4ee-6802865a20ee",
+    "userId": "12f47884-f72c-4e0a-b1d3-8de1e3fd30d2",
     "title": "Fiat Uno 2015 - Popular econômico",
-    "description": "Fiat Uno 2015, 1.0 fire, muito econômico, ideal para cidade.",
+    "description": "1.0 fire, muito econômico, ideal pra cidade.",
     "car": {
       "brand": "Fiat",
       "model": "Uno",
@@ -65,26 +73,30 @@
       "estimatedValue": 22000
     },
     "desiredTrade": {
-      "brand": "Volkswagen",
-      "model": "Gol",
-      "yearMin": 2013,
-      "yearMax": 2017,
-      "cashAdjustment": 2000,
-      "cashAdjustmentTolerance": 1500
+      "vehicles": [
+        {
+          "brand": "Volkswagen",
+          "model": "Gol",
+          "yearMin": 2013,
+          "yearMax": 2017,
+          "cashAdjustment": 2000,
+          "cashAdjustmentTolerance": 1500
+        }
+      ]
     },
     "contactInfo": {
       "whatsapp": "+5511999999993",
       "email": "roberto@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-09T19:44:49.784Z",
+    "createdAt": "2026-06-09T21:59:48.198Z",
     "isActive": true
   },
   {
-    "id": "62a0f358-4843-4877-8d4b-3b1125d3844d",
-    "userId": "ea927bf5-ef29-4fc8-ada3-5d4ff0affd09",
+    "id": "91b104e1-260c-4449-bfc7-59f5ccad9834",
+    "userId": "18352a2c-9378-473f-9337-fe812c70c676",
     "title": "VW Gol 2016 - Completo",
-    "description": "Gol 2016, 1.6, ar condicionado, direção elétrica, vidros e travas elétricos.",
+    "description": "1.6, ar condicionado, direção elétrica, vidros e travas elétricos.",
     "car": {
       "brand": "Volkswagen",
       "model": "Gol",
@@ -92,26 +104,30 @@
       "estimatedValue": 25000
     },
     "desiredTrade": {
-      "brand": "Fiat",
-      "model": "Uno",
-      "yearMin": 2014,
-      "yearMax": 2018,
-      "cashAdjustment": -1000,
-      "cashAdjustmentTolerance": 2000
+      "vehicles": [
+        {
+          "brand": "Fiat",
+          "model": "Uno",
+          "yearMin": 2014,
+          "yearMax": 2018,
+          "cashAdjustment": -1000,
+          "cashAdjustmentTolerance": 2000
+        }
+      ]
     },
     "contactInfo": {
       "whatsapp": "+5511999999994",
       "email": "juliana@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-09T19:44:49.784Z",
+    "createdAt": "2026-06-09T21:59:48.198Z",
     "isActive": true
   },
   {
-    "id": "2c75ef38-5af0-4010-b1f3-e9dd33bf0418",
-    "userId": "686c5997-73bf-4661-83f8-f60adbac93c6",
+    "id": "f12e6cdd-4fbb-4d31-ba38-36c7bcc651f1",
+    "userId": "c0894371-5865-4bec-ba1b-a8440254ad38",
     "title": "Chevrolet Onix 2020 - LTZ 1.4",
-    "description": "Onix 2020 LTZ, 1.4 aspirado, completo, absolutamente tudo funcionando.",
+    "description": "Completo, tudo funcionando, único dono.",
     "car": {
       "brand": "Chevrolet",
       "model": "Onix",
@@ -119,25 +135,30 @@
       "estimatedValue": 45000
     },
     "desiredTrade": {
-      "brand": "Chevrolet",
-      "yearMin": 2018,
-      "yearMax": 2022,
-      "cashAdjustment": 5000,
-      "cashAdjustmentTolerance": 5000
+      "vehicles": [
+        {
+          "brand": "Chevrolet",
+          "model": "",
+          "yearMin": 2018,
+          "yearMax": 2022,
+          "cashAdjustment": 5000,
+          "cashAdjustmentTolerance": 5000
+        }
+      ]
     },
     "contactInfo": {
       "whatsapp": "+5511999999995",
       "email": "fernando@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-09T19:44:49.785Z",
+    "createdAt": "2026-06-09T21:59:48.198Z",
     "isActive": true
   },
   {
-    "id": "66581e2d-3292-4c1e-85b0-36ce17fa95f6",
-    "userId": "61deec4e-20ba-4c92-8600-81c533f102a4",
+    "id": "5d6abef4-faf1-410b-b4ff-e2df338736e2",
+    "userId": "714f611b-e01b-4544-8399-25db3c349077",
     "title": "Chevrolet Cruze 2019 - LTZ",
-    "description": "Cruze 2019, 1.4 turbo, automático, bancos em couro, teto solar.",
+    "description": "1.4 turbo, automático, bancos em couro, teto solar.",
     "car": {
       "brand": "Chevrolet",
       "model": "Cruze",
@@ -145,25 +166,30 @@
       "estimatedValue": 55000
     },
     "desiredTrade": {
-      "brand": "Chevrolet",
-      "yearMin": 2018,
-      "yearMax": 2022,
-      "cashAdjustment": -5000,
-      "cashAdjustmentTolerance": 5000
+      "vehicles": [
+        {
+          "brand": "Chevrolet",
+          "model": "",
+          "yearMin": 2018,
+          "yearMax": 2022,
+          "cashAdjustment": -5000,
+          "cashAdjustmentTolerance": 5000
+        }
+      ]
     },
     "contactInfo": {
       "whatsapp": "+5511999999996",
       "email": "mariana@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-09T19:44:49.785Z",
+    "createdAt": "2026-06-09T21:59:48.198Z",
     "isActive": true
   },
   {
-    "id": "edde9c04-5120-42b9-a722-7f72ce4c79e0",
-    "userId": "a5650312-1316-47b9-b841-0631af3df8c6",
+    "id": "77506a46-2659-41df-ba5d-5a3cd2882b02",
+    "userId": "6ea5ae58-5f81-42e6-a695-d50887a359a5",
     "title": "Ford Ka 2017 - SEL 1.5",
-    "description": "Ford Ka SEL 2017, 1.5, completo, baixo km.",
+    "description": "Completo, baixo km, ótimo estado de conservação.",
     "car": {
       "brand": "Ford",
       "model": "Ka",
@@ -171,26 +197,30 @@
       "estimatedValue": 20000
     },
     "desiredTrade": {
-      "brand": "Jeep",
-      "model": "Compass",
-      "yearMin": 2019,
-      "yearMax": 2022,
-      "cashAdjustment": 15000,
-      "cashAdjustmentTolerance": 5000
+      "vehicles": [
+        {
+          "brand": "Jeep",
+          "model": "Compass",
+          "yearMin": 2019,
+          "yearMax": 2022,
+          "cashAdjustment": 15000,
+          "cashAdjustmentTolerance": 5000
+        }
+      ]
     },
     "contactInfo": {
       "whatsapp": "+5511999999997",
       "email": "carlos@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-09T19:44:49.785Z",
+    "createdAt": "2026-06-09T21:59:48.198Z",
     "isActive": true
   },
   {
-    "id": "869ad8e4-17ce-4efc-a817-06e6c0b6f00a",
-    "userId": "d593518f-eadc-4731-b1b9-8503607eac54",
+    "id": "599755a8-be31-4be4-b984-c2e965ccb253",
+    "userId": "e34b2577-3391-40cb-b166-72c6e93fd94d",
     "title": "Hyundai HB20 2021 - Diamond",
-    "description": "HB20 2021 Diamond, 1.0 turbo, automático, completo, 30mil km.",
+    "description": "1.0 turbo, automático, completo, 30mil km.",
     "car": {
       "brand": "Hyundai",
       "model": "HB20",
@@ -198,70 +228,51 @@
       "estimatedValue": 40000
     },
     "desiredTrade": {
-      "brand": "Renault",
-      "model": "Duster",
-      "yearMin": 2020,
-      "yearMax": 2023,
-      "cashAdjustment": 10000,
-      "cashAdjustmentTolerance": 3000
+      "vehicles": [
+        {
+          "brand": "Renault",
+          "model": "Duster",
+          "yearMin": 2020,
+          "yearMax": 2023,
+          "cashAdjustment": 10000,
+          "cashAdjustmentTolerance": 3000
+        }
+      ]
     },
     "contactInfo": {
       "whatsapp": "+5511999999998",
       "email": "ana@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-09T19:44:49.785Z",
+    "createdAt": "2026-06-09T21:59:48.198Z",
     "isActive": true
   },
   {
-    "id": "ca6db2ff-e606-4a5c-8a99-9358af061248",
-    "userId": "1f46c0c6-049b-4b84-9b3d-b42e08e9675e",
-    "title": null,
+    "id": "a90a31e1-15f0-4b20-9ae9-bb4314aeefaa",
+    "userId": "12075059-8c3f-4c0e-a17b-87dc3bf5253f",
+    "title": "Toyota Prius 2010 - Teste",
     "description": "",
     "car": {
       "brand": "Toyota",
       "model": "Prius",
       "year": 2010,
-      "estimatedValue": 20000
+      "estimatedValue": 40000
     },
     "desiredTrade": {
-      "brand": "Honda",
-      "yearMin": 2008,
-      "yearMax": 2008,
-      "cashAdjustment": 5000,
-      "cashAdjustmentTolerance": 0
+      "vehicles": [
+        {
+          "brand": "Honda",
+          "model": "Fit",
+          "yearMin": 2006,
+          "yearMax": 2010,
+          "cashAdjustment": -2000,
+          "cashAdjustmentTolerance": 2000
+        }
+      ]
     },
     "contactInfo": {},
     "images": [],
-    "createdAt": "2026-06-09T21:05:15.375Z",
-    "isActive": true
-  },
-  {
-    "id": "88525f3a-c878-4898-aa77-32719424437a",
-    "userId": "1f46c0c6-049b-4b84-9b3d-b42e08e9675e",
-    "title": null,
-    "description": "",
-    "car": {
-      "brand": "Toyota",
-      "model": "Prius",
-      "year": 2010,
-      "estimatedValue": 30000
-    },
-    "desiredTrade": {
-      "brand": "Honda",
-      "yearMin": 2008,
-      "yearMax": 2008,
-      "cashAdjustment": -5000,
-      "cashAdjustmentTolerance": 3000
-    },
-    "contactInfo": {
-      "whatsapp": "+5511946140288",
-      "email": "gabriel@gmail.com"
-    },
-    "images": [
-      "9f17fe17-86f6-457f-a8c1-e93d7f2859ba.jpg"
-    ],
-    "createdAt": "2026-06-09T21:07:05.226Z",
+    "createdAt": "2026-06-09T21:59:57.234Z",
     "isActive": true
   }
 ]
