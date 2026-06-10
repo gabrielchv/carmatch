@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-
-const FIPE_BASE = "https://parallelum.com.br/fipe/api/v1/carros";
+import { fetchFipePrice } from "@/lib/fipe-api";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -15,28 +14,13 @@ export async function GET(request: Request) {
     );
   }
 
-  const res = await fetch(
-    `${FIPE_BASE}/marcas/${brandId}/modelos/${modelId}/anos/${yearCode}`,
-    { next: { revalidate: 86400 } }
-  );
-
-  if (!res.ok) {
+  try {
+    const data = await fetchFipePrice(brandId, modelId, yearCode, { next: { revalidate: 86400 } });
+    return NextResponse.json(data);
+  } catch {
     return NextResponse.json(
       { error: "Erro ao buscar preço na Tabela FIPE" },
       { status: 502 }
     );
   }
-
-  const data: {
-    Valor: string;
-    Marca: string;
-    Modelo: string;
-    AnoModelo: number;
-    Combustivel: string;
-    CodigoFipe: string;
-    MesReferencia: string;
-    SiglaCombustivel: string;
-  } = await res.json();
-
-  return NextResponse.json(data);
 }

@@ -1,35 +1,17 @@
 import { addItem, clearData } from "./db";
 import { generateId, nowISO } from "./utils";
 import { runMatching } from "./matching";
-import type { User, CarPost } from "./types";
+import { fetchFipeBrands, fetchFipeModels, fetchFipeYears, fetchFipePrice } from "./fipe-api";
+import { parseFipeModels } from "./fipe-utils";
+import type { User, CarPost, DesiredVehicle } from "./types";
+import type { FipeBrand } from "./fipe-api";
 
-interface SeedUserEntry {
-  name: string;
-  email: string;
-}
+// ──────────────────────────────────────────────
+// Users — hardcoded (people, not car data)
+// FIPE doesn't have user data.
+// ──────────────────────────────────────────────
 
-interface SeedVehicle {
-  brand: string;
-  model?: string;
-  yearMin?: number;
-  yearMax?: number;
-  cashAdjustment: number;
-  tolerance: number;
-}
-
-interface SeedPostEntry {
-  userIndex: number;
-  title: string;
-  description: string;
-  brand: string;
-  model: string;
-  year: number;
-  value: number;
-  vehicles: SeedVehicle[];
-  whatsapp?: string;
-}
-
-const MOCK_USERS: SeedUserEntry[] = [
+const MOCK_USERS: { name: string; email: string }[] = [
   { name: "Carlos Silva", email: "carlos@email.com" },
   { name: "Ana Oliveira", email: "ana@email.com" },
   { name: "Roberto Santos", email: "roberto@email.com" },
@@ -38,166 +20,245 @@ const MOCK_USERS: SeedUserEntry[] = [
   { name: "Mariana Souza", email: "mariana@email.com" },
 ];
 
-const MOCK_POSTS: SeedPostEntry[] = [
-  {
-    userIndex: 0,
-    title: "Honda Fit 2008 - Excelente estado",
-    description: "Completo, ar condicionado, direção hidráulica, revisões em dia.",
-    brand: "Honda",
-    model: "Fit",
-    year: 2008,
-    value: 25000,
-    vehicles: [
-      { brand: "Toyota", model: "Prius", yearMin: 2008, yearMax: 2011, cashAdjustment: 5000, tolerance: 3000 },
-    ],
-    whatsapp: "+5511999999991",
-  },
-  {
-    userIndex: 1,
-    title: "Toyota Prius 2009 - Híbrido econômico",
-    description: "Bateria em ótimo estado, média de 18km/l, único dono.",
-    brand: "Toyota",
-    model: "Prius",
-    year: 2009,
-    value: 35000,
-    vehicles: [
-      { brand: "Honda", model: "Fit", yearMin: 2006, yearMax: 2010, cashAdjustment: -3000, tolerance: 3000 },
-    ],
-    whatsapp: "+5511999999992",
-  },
-  {
-    userIndex: 2,
-    title: "Fiat Uno 2015 - Popular econômico",
-    description: "1.0 fire, muito econômico, ideal pra cidade.",
-    brand: "Fiat",
-    model: "Uno",
-    year: 2015,
-    value: 22000,
-    vehicles: [
-      { brand: "Volkswagen", model: "Gol", yearMin: 2013, yearMax: 2017, cashAdjustment: 2000, tolerance: 1500 },
-    ],
-    whatsapp: "+5511999999993",
-  },
-  {
-    userIndex: 3,
-    title: "VW Gol 2016 - Completo",
-    description: "1.6, ar condicionado, direção elétrica, vidros e travas elétricos.",
-    brand: "Volkswagen",
-    model: "Gol",
-    year: 2016,
-    value: 25000,
-    vehicles: [
-      { brand: "Fiat", model: "Uno", yearMin: 2014, yearMax: 2018, cashAdjustment: -1000, tolerance: 2000 },
-    ],
-    whatsapp: "+5511999999994",
-  },
-  {
-    userIndex: 4,
-    title: "Chevrolet Onix 2020 - LTZ 1.4",
-    description: "Completo, tudo funcionando, único dono.",
-    brand: "Chevrolet",
-    model: "Onix",
-    year: 2020,
-    value: 45000,
-    vehicles: [
-      { brand: "Chevrolet", yearMin: 2018, yearMax: 2022, cashAdjustment: 5000, tolerance: 5000 },
-    ],
-    whatsapp: "+5511999999995",
-  },
-  {
-    userIndex: 5,
-    title: "Chevrolet Cruze 2019 - LTZ",
-    description: "1.4 turbo, automático, bancos em couro, teto solar.",
-    brand: "Chevrolet",
-    model: "Cruze",
-    year: 2019,
-    value: 55000,
-    vehicles: [
-      { brand: "Chevrolet", yearMin: 2018, yearMax: 2022, cashAdjustment: -5000, tolerance: 5000 },
-    ],
-    whatsapp: "+5511999999996",
-  },
-  {
-    userIndex: 0,
-    title: "Ford Ka 2017 - SEL 1.5",
-    description: "Completo, baixo km, ótimo estado de conservação.",
-    brand: "Ford",
-    model: "Ka",
-    year: 2017,
-    value: 20000,
-    vehicles: [
-      { brand: "Jeep", model: "Compass", yearMin: 2019, yearMax: 2022, cashAdjustment: 15000, tolerance: 5000 },
-    ],
-    whatsapp: "+5511999999997",
-  },
-  {
-    userIndex: 1,
-    title: "Hyundai HB20 2021 - Diamond",
-    description: "1.0 turbo, automático, completo, 30mil km.",
-    brand: "Hyundai",
-    model: "HB20",
-    year: 2021,
-    value: 40000,
-    vehicles: [
-      { brand: "Renault", model: "Duster", yearMin: 2020, yearMax: 2023, cashAdjustment: 10000, tolerance: 3000 },
-    ],
-    whatsapp: "+5511999999998",
-  },
+// ──────────────────────────────────────────────
+// Lookup config — search params for the FIPE API.
+// These tell the seed WHAT to fetch. They are search
+// parameters, not seed output — no hardcoded years,
+// titles, descriptions, cash, or WhatsApp here.
+// ──────────────────────────────────────────────
+
+interface LookupEntry {
+  brand: string;
+  model: string;       // General model name (first word of FIPE name)
+  preferAuto: boolean; // Prefer automatic transmission version
+}
+
+const SEED_LOOKUPS: LookupEntry[] = [
+  // 0-7: Primary cars — each produces one post
+  { brand: "Honda",           model: "Fit",     preferAuto: true  },
+  { brand: "Toyota",          model: "Prius",   preferAuto: true  },
+  { brand: "Fiat",            model: "Uno",     preferAuto: false },
+  { brand: "VW - VolksWagen", model: "Gol",     preferAuto: false },
+  { brand: "GM - Chevrolet",  model: "Onix",    preferAuto: true  },
+  { brand: "GM - Chevrolet",  model: "Cruze",   preferAuto: true  },
+  { brand: "Ford",            model: "Ka",      preferAuto: false },
+  { brand: "Hyundai",         model: "HB20",    preferAuto: true  },
+  // 8-9: Reference cars — fetched for desired-vehicle data, no post created
+  { brand: "Jeep",            model: "Compass", preferAuto: true  },
+  { brand: "Renault",         model: "Duster",  preferAuto: true  },
 ];
 
-export function seedDatabase(): {
+// Which lookup indices produce actual posts — these become CarPosts
+const POST_LOOKUP_INDICES = [0, 1, 2, 3, 4, 5, 6, 7];
+
+// Map post index (position in POST_LOOKUP_INDICES) → user index
+const POST_USER_INDICES = [0, 1, 2, 3, 4, 5, 0, 1];
+
+// Each entry: [postIndex, desiredCarLookupIndex]
+// The post at postIndex wants a car matching the FIPE data at desiredCarLookupIndex.
+// Everything is derived from the resolved FIPE data — no hardcoded model strings.
+const SEED_WANTS: [number, number][] = [
+  [0, 1], // Honda Fit     → wants a car like the Toyota Prius
+  [1, 0], // Toyota Prius  → wants a car like the Honda Fit
+  [2, 3], // Fiat Uno      → wants a car like the VW Gol
+  [3, 2], // VW Gol        → wants a car like the Fiat Uno
+  [4, 5], // Chevy Onix    → wants any Chevy (model stripped → brand-only match)
+  [5, 4], // Chevy Cruze   → wants any Chevy (model stripped → brand-only match)
+  [6, 8], // Ford Ka       → wants a car like the Jeep Compass
+  [7, 9], // Hyundai HB20  → wants a car like the Renault Duster
+];
+
+// ──────────────────────────────────────────────
+// Cache helpers
+// ──────────────────────────────────────────────
+
+let _brandsCache: FipeBrand[] | null = null;
+
+async function findBrandCode(name: string): Promise<string> {
+  if (!_brandsCache) _brandsCache = await fetchFipeBrands();
+  const match = _brandsCache.find((b) => b.nome.toLowerCase() === name.toLowerCase());
+  if (!match) throw new Error(`Marca "${name}" não encontrada na Tabela FIPE`);
+  return match.codigo;
+}
+
+const parsedCache = new Map<string, ReturnType<typeof parseFipeModels>>();
+
+async function getParsedModels(brandCode: string) {
+  if (parsedCache.has(brandCode)) return parsedCache.get(brandCode)!;
+  const raw = await fetchFipeModels(brandCode);
+  const parsed = parseFipeModels(raw);
+  parsedCache.set(brandCode, parsed);
+  return parsed;
+}
+
+const yearsCache = new Map<string, { value: string; yearNum: number }[]>();
+
+async function getYearOptions(brandCode: string, modelCode: string) {
+  const key = `${brandCode}-${modelCode}`;
+  if (yearsCache.has(key)) return yearsCache.get(key)!;
+  const raw = await fetchFipeYears(brandCode, modelCode);
+  const mapped = raw.map((y) => ({
+    value: y.codigo,
+    yearNum: parseInt(y.codigo.split("-")[0], 10),
+  }));
+  yearsCache.set(key, mapped);
+  return mapped;
+}
+
+// ──────────────────────────────────────────────
+// Resolve one car from FIPE
+// ──────────────────────────────────────────────
+
+interface ResolvedCar {
+  brand: string;
+  generalModel: string;        // First word of FIPE name
+  version: string;             // Version string (transmission suffix stripped)
+  transmission: string | null; // "Automático" | "Manual" | null
+  fullModelName: string;       // Full FIPE name
+  year: number;
+  estimatedValue: number;
+}
+
+async function resolveCarFromFipe(lookup: LookupEntry): Promise<ResolvedCar> {
+  const brandCode = await findBrandCode(lookup.brand);
+  const parsed = await getParsedModels(brandCode);
+
+  const match = parsed.generalModels.find(
+    (gm) => gm.toLowerCase() === lookup.model.toLowerCase()
+  );
+  if (!match) {
+    throw new Error(
+      `Modelo "${lookup.model}" da marca "${lookup.brand}" não encontrado. ` +
+      `Disponíveis: ${parsed.generalModels.join(", ")}`
+    );
+  }
+
+  const versions = parsed.versionsByGeneralModel[match]
+    // Sort by modelCode descending — higher codes tend to be newer FIPE entries
+    .sort((a, b) => parseInt(b.modelCode) - parseInt(a.modelCode));
+  let chosenVersion = versions[0];
+  if (lookup.preferAuto) {
+    const auto = versions.find((v) => v.transmission === "Automático");
+    if (auto) chosenVersion = auto;
+  }
+
+  const yearOpts = await getYearOptions(brandCode, chosenVersion.modelCode);
+  // Pick the latest available year — no hardcoded target.
+  const latestYear = yearOpts[yearOpts.length - 1];
+  if (!latestYear) {
+    throw new Error(`Nenhum ano para ${lookup.brand} ${chosenVersion.fullName}`);
+  }
+
+  const priceData = await fetchFipePrice(brandCode, chosenVersion.modelCode, latestYear.value);
+  const cleaned = priceData.Valor.replace(/[R$\s.]/g, "").replace(",", ".");
+  const price = parseFloat(cleaned);
+  if (isNaN(price)) throw new Error(`Preço FIPE inválido: "${priceData.Valor}"`);
+
+  return {
+    brand: lookup.brand,
+    generalModel: match,
+    version: chosenVersion.version,
+    transmission: chosenVersion.transmission,
+    fullModelName: chosenVersion.fullName,
+    year: priceData.AnoModelo,
+    estimatedValue: Math.round(price),
+  };
+}
+
+// ──────────────────────────────────────────────
+// Main seed function
+// ──────────────────────────────────────────────
+
+export async function seedDatabase(): Promise<{
   users: User[];
   posts: CarPost[];
   matchCount: number;
-} {
+}> {
   clearData("users");
   clearData("posts");
   clearData("matches");
 
+  // Users
   const users: User[] = MOCK_USERS.map((u) => ({
     id: generateId(),
     name: u.name,
     email: u.email,
     createdAt: nowISO(),
   }));
-  for (const user of users) {
-    addItem("users", user);
+  for (const user of users) addItem("users", user);
+
+  // Reset caches so each seed run fetches fresh FIPE data
+  _brandsCache = null;
+  parsedCache.clear();
+  yearsCache.clear();
+
+  // ── Pass 1: resolve ALL lookups from FIPE ──
+  const resolved: ResolvedCar[] = [];
+  for (const lookup of SEED_LOOKUPS) {
+    resolved.push(await resolveCarFromFipe(lookup));
   }
 
-  const posts: CarPost[] = MOCK_POSTS.map((p) => ({
-    id: generateId(),
-    userId: users[p.userIndex].id,
-    title: p.title,
-    description: p.description,
-    car: {
-      brand: p.brand,
-      model: p.model,
-      year: p.year,
-      estimatedValue: p.value,
-    },
-    desiredTrade: {
-      vehicles: p.vehicles.map((v) => ({
-        brand: v.brand,
-        model: v.model || "",
-        yearMin: v.yearMin,
-        yearMax: v.yearMax,
-        cashAdjustment: v.cashAdjustment,
-        cashAdjustmentTolerance: v.tolerance,
-      })),
-    },
-    contactInfo: {
-      whatsapp: p.whatsapp,
-      email: users[p.userIndex].email,
-    },
-    images: [],
-    createdAt: nowISO(),
-    isActive: true,
-  }));
-  for (const post of posts) {
-    addItem("posts", post);
-  }
+  // ── Pass 2: build posts with everything derived from FIPE ──
+  const posts: CarPost[] = POST_LOOKUP_INDICES.map((lookupIndex, postIndex) => {
+    const car = resolved[lookupIndex];
+
+    // Find what this post wants
+    const want = SEED_WANTS.find((w) => w[0] === postIndex)!;
+    const targetIndex = want[1];
+    const targetCar = resolved[targetIndex];
+
+    // Chevrolet pair (4↔5) is brand-only — strip model/version/transmission
+    const isBrandOnly =
+      (postIndex === 4 && targetIndex === 5) ||
+      (postIndex === 5 && targetIndex === 4);
+
+    // Cash derived from FIPE price difference between the two cars.
+    // Positive = this post pays cash on top; negative = receives cash.
+    const cashAdjustment = targetCar.estimatedValue - car.estimatedValue;
+    const tolerance = Math.max(1, Math.round(0.2 * Math.abs(cashAdjustment)));
+
+    // Year range centered on the target car's actual FIPE year
+    const yearMin = targetCar.year - 3;
+    const yearMax = targetCar.year + 3;
+
+    const desiredVehicle: DesiredVehicle = {
+      brand: targetCar.brand,
+      model: isBrandOnly ? "" : targetCar.generalModel,
+      version: isBrandOnly ? undefined : targetCar.version,
+      transmission: isBrandOnly ? undefined : (targetCar.transmission ?? undefined),
+      yearMin,
+      yearMax,
+      cashAdjustment,
+      cashAdjustmentTolerance: tolerance,
+    };
+
+    // Title auto-generated from FIPE data — never a hardcoded year.
+    const title = `${car.brand} ${car.fullModelName} ${car.year}`;
+
+    return {
+      id: generateId(),
+      userId: users[POST_USER_INDICES[postIndex]].id,
+      title,
+      description: "",
+      car: {
+        brand: car.brand,
+        model: car.fullModelName,
+        year: car.year,
+        estimatedValue: car.estimatedValue,
+      },
+      desiredTrade: { vehicles: [desiredVehicle] },
+      contactInfo: {
+        whatsapp: undefined,
+        email: users[POST_USER_INDICES[postIndex]].email,
+      },
+      images: [],
+      createdAt: nowISO(),
+      isActive: true,
+    };
+  });
+
+  for (const post of posts) addItem("posts", post);
 
   const newMatches = runMatching();
-
   return { users, posts, matchCount: newMatches.length };
 }

@@ -8,12 +8,12 @@
 
 import { seedDatabase } from "../lib/seed-data";
 
-function main() {
+async function main() {
   console.log("🌱 CarMatch Seed Script");
   console.log("========================");
 
   try {
-    const result = seedDatabase();
+    const result = await seedDatabase();
 
     console.log(`\n✅ Database seeded successfully!\n`);
     console.log(`   Users created:  ${result.users.length}`);

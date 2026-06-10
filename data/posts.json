@@ -1,327 +1,309 @@
 [
   {
-    "id": "849c968b-f3c4-4813-8258-52d90eaebe6b",
-    "userId": "6ea5ae58-5f81-42e6-a695-d50887a359a5",
-    "title": "Honda Fit 2008 - Excelente estado",
-    "description": "Completo, ar condicionado, direção hidráulica, revisões em dia.",
+    "id": "acf387ba-b7a2-48b6-a856-90e2b97ce74e",
+    "userId": "7907e4de-ef08-4cdb-860a-4789c9ae2129",
+    "title": "Honda Fit EX/S 1.5 Flex/Flexone 16V 5p Aut. 2005",
+    "description": "",
     "car": {
       "brand": "Honda",
-      "model": "Fit",
-      "year": 2008,
-      "estimatedValue": 25000
+      "model": "Fit EX/S 1.5 Flex/Flexone 16V 5p Aut.",
+      "year": 2005,
+      "estimatedValue": 29117
     },
     "desiredTrade": {
       "vehicles": [
         {
           "brand": "Toyota",
-          "model": "Prius",
-          "yearMin": 2008,
-          "yearMax": 2011,
-          "cashAdjustment": 5000,
-          "cashAdjustmentTolerance": 3000
+          "model": "PRIUS",
+          "version": "1.8 16V 5p Aut. (Híbrido)",
+          "yearMin": 2009,
+          "yearMax": 2015,
+          "cashAdjustment": 18826,
+          "cashAdjustmentTolerance": 3765
         }
       ]
     },
     "contactInfo": {
-      "whatsapp": "+5511999999991",
       "email": "carlos@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-09T21:59:48.198Z",
+    "createdAt": "2026-06-10T14:31:37.831Z",
     "isActive": true
   },
   {
-    "id": "49f97b42-b434-4452-b7f0-933ff6e23b56",
-    "userId": "e34b2577-3391-40cb-b166-72c6e93fd94d",
-    "title": "Toyota Prius 2009 - Híbrido econômico",
-    "description": "Bateria em ótimo estado, média de 18km/l, único dono.",
+    "id": "2093bad6-c37c-439f-8037-1737b9529e9a",
+    "userId": "26841a78-59f8-4e83-b908-d18fc1d5f357",
+    "title": "Toyota PRIUS 1.8 16V 5p Aut. (Híbrido) 2012",
+    "description": "",
     "car": {
       "brand": "Toyota",
-      "model": "Prius",
-      "year": 2009,
-      "estimatedValue": 35000
+      "model": "PRIUS 1.8 16V 5p Aut. (Híbrido)",
+      "year": 2012,
+      "estimatedValue": 47943
     },
     "desiredTrade": {
       "vehicles": [
         {
           "brand": "Honda",
           "model": "Fit",
-          "yearMin": 2006,
-          "yearMax": 2010,
-          "cashAdjustment": -3000,
-          "cashAdjustmentTolerance": 3000
+          "version": "EX/S 1.5 Flex/Flexone 16V 5p",
+          "transmission": "Automático",
+          "yearMin": 2002,
+          "yearMax": 2008,
+          "cashAdjustment": -18826,
+          "cashAdjustmentTolerance": 3765
         }
       ]
     },
     "contactInfo": {
-      "whatsapp": "+5511999999992",
       "email": "ana@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-09T21:59:48.198Z",
+    "createdAt": "2026-06-10T14:31:37.831Z",
     "isActive": true
   },
   {
-    "id": "c3cc06b2-300b-4386-b4ee-6802865a20ee",
-    "userId": "12f47884-f72c-4e0a-b1d3-8de1e3fd30d2",
-    "title": "Fiat Uno 2015 - Popular econômico",
-    "description": "1.0 fire, muito econômico, ideal pra cidade.",
+    "id": "72e0cd04-91f0-4b52-b35d-26794d2be156",
+    "userId": "3d999a8a-779e-49a1-ae45-4d3bd764c301",
+    "title": "Fiat Uno Mille Grazie 1.0 Fire Flex 8v 4p 2013",
+    "description": "",
     "car": {
       "brand": "Fiat",
-      "model": "Uno",
-      "year": 2015,
-      "estimatedValue": 22000
+      "model": "Uno Mille Grazie 1.0 Fire Flex 8v 4p",
+      "year": 2013,
+      "estimatedValue": 42680
     },
     "desiredTrade": {
       "vehicles": [
         {
-          "brand": "Volkswagen",
+          "brand": "VW - VolksWagen",
           "model": "Gol",
-          "yearMin": 2013,
-          "yearMax": 2017,
-          "cashAdjustment": 2000,
-          "cashAdjustmentTolerance": 1500
+          "version": "Last Edition 1.0 Flex 12V 5p",
+          "yearMin": 2020,
+          "yearMax": 2026,
+          "cashAdjustment": 59234,
+          "cashAdjustmentTolerance": 11847
         }
       ]
     },
     "contactInfo": {
-      "whatsapp": "+5511999999993",
       "email": "roberto@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-09T21:59:48.198Z",
+    "createdAt": "2026-06-10T14:31:37.831Z",
     "isActive": true
   },
   {
-    "id": "91b104e1-260c-4449-bfc7-59f5ccad9834",
-    "userId": "18352a2c-9378-473f-9337-fe812c70c676",
-    "title": "VW Gol 2016 - Completo",
-    "description": "1.6, ar condicionado, direção elétrica, vidros e travas elétricos.",
+    "id": "68f4494f-cc9e-4410-a517-25bc2eb47542",
+    "userId": "eb82ee5f-8cfc-47ce-8892-b77d6e5bf56d",
+    "title": "VW - VolksWagen Gol Last Edition 1.0 Flex 12V 5p 2023",
+    "description": "",
     "car": {
-      "brand": "Volkswagen",
-      "model": "Gol",
-      "year": 2016,
-      "estimatedValue": 25000
+      "brand": "VW - VolksWagen",
+      "model": "Gol Last Edition 1.0 Flex 12V 5p",
+      "year": 2023,
+      "estimatedValue": 101914
     },
     "desiredTrade": {
       "vehicles": [
         {
           "brand": "Fiat",
           "model": "Uno",
-          "yearMin": 2014,
-          "yearMax": 2018,
-          "cashAdjustment": -1000,
-          "cashAdjustmentTolerance": 2000
+          "version": "Mille Grazie 1.0 Fire Flex 8v 4p",
+          "yearMin": 2010,
+          "yearMax": 2016,
+          "cashAdjustment": -59234,
+          "cashAdjustmentTolerance": 11847
         }
       ]
     },
     "contactInfo": {
-      "whatsapp": "+5511999999994",
       "email": "juliana@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-09T21:59:48.198Z",
+    "createdAt": "2026-06-10T14:31:37.831Z",
     "isActive": true
   },
   {
-    "id": "f12e6cdd-4fbb-4d31-ba38-36c7bcc651f1",
-    "userId": "c0894371-5865-4bec-ba1b-a8440254ad38",
-    "title": "Chevrolet Onix 2020 - LTZ 1.4",
-    "description": "Completo, tudo funcionando, único dono.",
+    "id": "53d049af-defa-4d6a-b39f-e10819b3661d",
+    "userId": "8ae3d2db-a92c-42c8-a508-8d58f4577ab1",
+    "title": "GM - Chevrolet ONIX SD. P. PR. MIDNIGHT 1.0 TB Flex Aut 2021",
+    "description": "",
     "car": {
-      "brand": "Chevrolet",
-      "model": "Onix",
-      "year": 2020,
-      "estimatedValue": 45000
+      "brand": "GM - Chevrolet",
+      "model": "ONIX SD. P. PR. MIDNIGHT 1.0 TB Flex Aut",
+      "year": 2021,
+      "estimatedValue": 70058
     },
     "desiredTrade": {
       "vehicles": [
         {
-          "brand": "Chevrolet",
+          "brand": "GM - Chevrolet",
           "model": "",
-          "yearMin": 2018,
-          "yearMax": 2022,
-          "cashAdjustment": 5000,
-          "cashAdjustmentTolerance": 5000
+          "yearMin": 2019,
+          "yearMax": 2025,
+          "cashAdjustment": 42137,
+          "cashAdjustmentTolerance": 8427
         }
       ]
     },
     "contactInfo": {
-      "whatsapp": "+5511999999995",
       "email": "fernando@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-09T21:59:48.198Z",
+    "createdAt": "2026-06-10T14:31:37.831Z",
     "isActive": true
   },
   {
-    "id": "5d6abef4-faf1-410b-b4ff-e2df338736e2",
-    "userId": "714f611b-e01b-4544-8399-25db3c349077",
-    "title": "Chevrolet Cruze 2019 - LTZ",
-    "description": "1.4 turbo, automático, bancos em couro, teto solar.",
+    "id": "4903e5b4-1c6c-47b9-b39e-dc7aa18e774e",
+    "userId": "9c5735e9-fa35-4ca1-b2c6-8552d2a3ec90",
+    "title": "GM - Chevrolet CRUZE Sport RS 1.4 16V TB Flex 5p Aut. 2022",
+    "description": "",
     "car": {
-      "brand": "Chevrolet",
-      "model": "Cruze",
-      "year": 2019,
-      "estimatedValue": 55000
+      "brand": "GM - Chevrolet",
+      "model": "CRUZE Sport RS 1.4 16V TB Flex 5p Aut.",
+      "year": 2022,
+      "estimatedValue": 112195
     },
     "desiredTrade": {
       "vehicles": [
         {
-          "brand": "Chevrolet",
+          "brand": "GM - Chevrolet",
           "model": "",
           "yearMin": 2018,
-          "yearMax": 2022,
-          "cashAdjustment": -5000,
-          "cashAdjustmentTolerance": 5000
+          "yearMax": 2024,
+          "cashAdjustment": -42137,
+          "cashAdjustmentTolerance": 8427
         }
       ]
     },
     "contactInfo": {
-      "whatsapp": "+5511999999996",
       "email": "mariana@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-09T21:59:48.198Z",
+    "createdAt": "2026-06-10T14:31:37.831Z",
     "isActive": true
   },
   {
-    "id": "77506a46-2659-41df-ba5d-5a3cd2882b02",
-    "userId": "6ea5ae58-5f81-42e6-a695-d50887a359a5",
-    "title": "Ford Ka 2017 - SEL 1.5",
-    "description": "Completo, baixo km, ótimo estado de conservação.",
+    "id": "600f2440-f145-4a7e-85d0-db4cdf1dbc2d",
+    "userId": "7907e4de-ef08-4cdb-860a-4789c9ae2129",
+    "title": "Ford Ka 1.5 Sedan SEL 12V Flex 4p Aut. 2020",
+    "description": "",
     "car": {
       "brand": "Ford",
-      "model": "Ka",
-      "year": 2017,
-      "estimatedValue": 20000
+      "model": "Ka 1.5 Sedan SEL 12V Flex 4p Aut.",
+      "year": 2020,
+      "estimatedValue": 56217
     },
     "desiredTrade": {
       "vehicles": [
         {
           "brand": "Jeep",
-          "model": "Compass",
-          "yearMin": 2019,
-          "yearMax": 2022,
-          "cashAdjustment": 15000,
-          "cashAdjustmentTolerance": 5000
+          "model": "COMPASS",
+          "version": "Blackhawk Hurricane 2.0 4x4 TB",
+          "transmission": "Automático",
+          "yearMin": 2023,
+          "yearMax": 2029,
+          "cashAdjustment": 184662,
+          "cashAdjustmentTolerance": 36932
         }
       ]
     },
     "contactInfo": {
-      "whatsapp": "+5511999999997",
       "email": "carlos@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-09T21:59:48.198Z",
+    "createdAt": "2026-06-10T14:31:37.831Z",
     "isActive": true
   },
   {
-    "id": "599755a8-be31-4be4-b984-c2e965ccb253",
-    "userId": "e34b2577-3391-40cb-b166-72c6e93fd94d",
-    "title": "Hyundai HB20 2021 - Diamond",
-    "description": "1.0 turbo, automático, completo, 30mil km.",
+    "id": "0dc98c20-f0b5-494a-80ab-8847f2e8ce35",
+    "userId": "26841a78-59f8-4e83-b908-d18fc1d5f357",
+    "title": "Hyundai HB20 Limited 1.0 TB Flex 12V Aut. 2026",
+    "description": "",
     "car": {
       "brand": "Hyundai",
-      "model": "HB20",
-      "year": 2021,
-      "estimatedValue": 40000
+      "model": "HB20 Limited 1.0 TB Flex 12V Aut.",
+      "year": 2026,
+      "estimatedValue": 103643
     },
     "desiredTrade": {
       "vehicles": [
         {
           "brand": "Renault",
-          "model": "Duster",
-          "yearMin": 2020,
-          "yearMax": 2023,
-          "cashAdjustment": 10000,
-          "cashAdjustmentTolerance": 3000
+          "model": "DUSTER",
+          "version": "Intense Plus 1.6 16V Flex",
+          "transmission": "Automático",
+          "yearMin": 2021,
+          "yearMax": 2027,
+          "cashAdjustment": -9632,
+          "cashAdjustmentTolerance": 1926
         }
       ]
     },
     "contactInfo": {
-      "whatsapp": "+5511999999998",
       "email": "ana@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-09T21:59:48.198Z",
+    "createdAt": "2026-06-10T14:31:37.831Z",
     "isActive": true
   },
   {
-    "id": "a90a31e1-15f0-4b20-9ae9-bb4314aeefaa",
-    "userId": "12075059-8c3f-4c0e-a17b-87dc3bf5253f",
-    "title": "Toyota Prius 2010 - Teste",
+    "id": "312e2917-c6a9-473e-a708-aec95956bf42",
+    "userId": "087de483-e2ed-49f9-b3cb-cc700168e274",
+    "title": "Polo 2009",
     "description": "",
     "car": {
-      "brand": "Toyota",
-      "model": "Prius",
-      "year": 2010,
-      "estimatedValue": 40000
+      "brand": "VW - VolksWagen",
+      "model": "Polo GT 2.0 Mi Total Flex 8V 5p",
+      "year": 2009,
+      "estimatedValue": 46021
     },
     "desiredTrade": {
       "vehicles": [
         {
-          "brand": "Honda",
-          "model": "Fit",
-          "yearMin": 2006,
-          "yearMax": 2010,
-          "cashAdjustment": -2000,
-          "cashAdjustmentTolerance": 2000
-        }
-      ]
-    },
-    "contactInfo": {},
-    "images": [],
-    "createdAt": "2026-06-09T21:59:57.234Z",
-    "isActive": true
-  },
-  {
-    "id": "9884d32c-30bf-4034-99f1-f9f7072f9e48",
-    "userId": "6ea5ae58-5f81-42e6-a695-d50887a359a5",
-    "title": "Honda Fit 2014",
-    "description": "Teste",
-    "car": {
-      "brand": "Honda",
-      "model": "Fit CX 1.4 Flex 16V 5p Aut.",
-      "year": 2014,
-      "estimatedValue": 54650
-    },
-    "desiredTrade": {
-      "vehicles": [
-        {
-          "brand": "Honda",
-          "model": "Fit",
-          "version": "CX 1.4 Flex 16V 5p",
+          "brand": "VW - VolksWagen",
+          "model": "Golf",
+          "version": "GTE TSI 1.4 16V Híbrido",
           "transmission": "Automático",
-          "yearMin": 2010,
-          "yearMax": 2018,
+          "yearMin": 2018,
+          "yearMax": 2020,
           "cashAdjustment": 0,
-          "cashAdjustmentTolerance": 2000
+          "cashAdjustmentTolerance": 0
         }
       ]
     },
     "contactInfo": {},
     "images": [],
-    "createdAt": "2026-06-10T01:40:45.689Z",
+    "createdAt": "2026-06-10T16:04:16.417Z",
     "isActive": true
   },
   {
-    "id": "426bc953-5aee-4c56-8292-ef42034ee38e",
-    "userId": "fce6ff2b-b2f4-401c-9f19-6c3da0c5e940",
-    "title": "Teste Meu Carro",
-    "description": "Teste",
+    "id": "4b0b9acc-fc3e-42ae-8c14-fb23b91c34f5",
+    "userId": "c5621f12-dd56-4fc7-af81-9add29cb89c4",
+    "title": "golf 2020",
+    "description": "",
     "car": {
-      "brand": "Honda",
-      "model": "Fit CX 1.4 Flex 16V 5p Aut.",
-      "year": 2014,
-      "estimatedValue": 54650
+      "brand": "VW - VolksWagen",
+      "model": "Golf GTE TSI 1.4 16V Híbrido Aut.",
+      "year": 2020,
+      "estimatedValue": 166330
     },
     "desiredTrade": {
-      "vehicles": []
+      "vehicles": [
+        {
+          "brand": "VW - VolksWagen",
+          "model": "Polo",
+          "yearMin": 2008,
+          "yearMax": 2012,
+          "cashAdjustment": 0,
+          "cashAdjustmentTolerance": 0
+        }
+      ]
     },
     "contactInfo": {},
     "images": [],
-    "createdAt": "2026-06-10T01:47:51.061Z",
+    "createdAt": "2026-06-10T16:06:05.696Z",
     "isActive": true
   }
 ]

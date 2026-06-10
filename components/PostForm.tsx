@@ -107,6 +107,7 @@ export default function PostForm() {
 
   // 1. Quando marca muda → busca e parseia modelos FIPE
   useEffect(() => {
+    setError("");
     if (!myBrandId) {
       setMyParsed(null);
       setMyGeneralModel("");
@@ -137,17 +138,22 @@ export default function PostForm() {
     }
 
     fetch(`/api/fipe/models?brandId=${myBrandId}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Falha ao carregar modelos");
+        return r.json();
+      })
       .then((data: { codigo: number; nome: string }[]) => {
         const parsed = parseFipeModels(data);
         fipeParsedCache.set(myBrandId, parsed);
         setMyParsed(parsed);
       })
+      .catch(() => setError("Erro ao carregar modelos da Tabela FIPE"))
       .finally(() => setMyParsedLoading(false));
   }, [myBrandId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 2. Quando versão selecionada → busca anos usando modelCode
   useEffect(() => {
+    setError("");
     if (!myBrandId || !myVersionModelCode) {
       setMyYears([]);
       setMyYearCode("");
@@ -161,20 +167,28 @@ export default function PostForm() {
     if (!myEstimatedValueEdited) setMyEstimatedValue("");
 
     fetch(`/api/fipe/years?brandId=${myBrandId}&modelId=${myVersionModelCode}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Falha ao carregar anos");
+        return r.json();
+      })
       .then((data: { codigo: string; nome: string }[]) => {
         setMyYears(data.map((y) => ({ value: y.codigo, label: y.nome })));
       })
+      .catch(() => setError("Erro ao carregar anos da Tabela FIPE"))
       .finally(() => setMyYearsLoading(false));
   }, [myBrandId, myVersionModelCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 3. Quando ano selecionado → busca preço FIPE
   useEffect(() => {
+    setError("");
     if (!myBrandId || !myVersionModelCode || !myYearCode) return;
     fetch(
       `/api/fipe/price?brandId=${myBrandId}&modelId=${myVersionModelCode}&yearCode=${myYearCode}`
     )
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Falha ao carregar preço");
+        return r.json();
+      })
       .then((data: { Valor: string; AnoModelo: number }) => {
         const cleaned = data.Valor.replace(/[R$\s.]/g, "").replace(",", ".");
         const price = parseFloat(cleaned);
@@ -183,7 +197,7 @@ export default function PostForm() {
         }
         setMyYearNumber(String(data.AnoModelo));
       })
-      .catch(() => {});
+      .catch(() => setError("Erro ao buscar preço na Tabela FIPE"));
   }, [myBrandId, myVersionModelCode, myYearCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ================================================================
