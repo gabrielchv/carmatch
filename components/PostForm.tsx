@@ -47,6 +47,9 @@ function freshRow(): VehicleRow {
 // Cache de dados FIPE parseados por brandId
 const fipeParsedCache = new Map<string, ReturnType<typeof parseFipeModels>>();
 
+// Cache de anos FIPE por brandId|versionCode (ex: "26|7128" → ["2008","2009",...])
+const yearByVersionCache = new Map<string, string[]>();
+
 export default function PostForm({
   initialData,
   postId,
@@ -100,6 +103,10 @@ export default function PostForm({
   >({});
   const [rowParsedLoading, setRowParsedLoading] = useState<Record<number, boolean>>({});
   const loadingRef = useRef<Record<number, boolean>>({});
+
+  // Anos FIPE disponíveis por rowId (ex: { 1: ["2008","2009","2010"] })
+  const [rowYears, setRowYears] = useState<Record<number, string[]>>({});
+  const [rowYearsLoading, setRowYearsLoading] = useState<Record<number, boolean>>({});
 
   // ================================================================
   // BRANDS
@@ -267,6 +274,12 @@ export default function PostForm({
             })
           );
           setRows(initializedRows);
+          // Busca anos FIPE para versões já selecionadas (edição)
+          for (const r of initializedRows) {
+            if (r.brandId && r.versionCode) {
+              fetchRowYears(r.id, r.brandId, r.versionCode);
+            }
+          }
         }
 
         setEditInitDone(true);
@@ -404,6 +417,29 @@ export default function PostForm({
     }
   }, []);
 
+  // Busca anos FIPE disponíveis para uma versão específica e armazena no state
+  const fetchRowYears = useCallback(async (rowId: number, brandId: string, versionCode: string) => {
+    const cacheKey = `${brandId}|${versionCode}`;
+    if (yearByVersionCache.has(cacheKey)) {
+      setRowYears((prev) => ({ ...prev, [rowId]: yearByVersionCache.get(cacheKey)! }));
+      return;
+    }
+    setRowYearsLoading((prev) => ({ ...prev, [rowId]: true }));
+    try {
+      const res = await fetch(`/api/fipe/years?brandId=${brandId}&modelId=${versionCode}`);
+      if (!res.ok) return;
+      const data: { nome: string }[] = await res.json();
+      // Extrai apenas o ano numérico (primeiros 4 caracteres do nome)
+      const years = [...new Set(data.map((y) => y.nome.trim().substring(0, 4)))].sort();
+      yearByVersionCache.set(cacheKey, years);
+      setRowYears((prev) => ({ ...prev, [rowId]: years }));
+    } catch {
+      // silencia erro na busca de anos
+    } finally {
+      setRowYearsLoading((prev) => ({ ...prev, [rowId]: false }));
+    }
+  }, []);
+
   const handleRowBrandChange = useCallback(
     (rowId: number, opt: SelectOption | null) => {
       setRows((prev) =>
@@ -451,13 +487,14 @@ export default function PostForm({
   const handleRowVersionChange = useCallback(
     (rowId: number, opt: SelectOption | null) => {
       // opt.value = FIPE modelCode (único), opt.label = version + trans display
+      const row = rows.find(r => r.id === rowId);
+      const parsed = rowParsed[rowId];
+      const versions = parsed?.versionsByGeneralModel[row?.generalModel || ""] || [];
+      const matched = versions.find((v) => v.modelCode === opt?.value);
+
       setRows((prev) =>
         prev.map((r) => {
           if (r.id !== rowId) return r;
-          // Busca a VersionOption pelo modelCode para extrair version e transmission
-          const parsed = rowParsed[rowId];
-          const versions = parsed?.versionsByGeneralModel[r.generalModel] || [];
-          const matched = versions.find((v) => v.modelCode === opt?.value);
           return {
             ...r,
             versionCode: matched?.modelCode || "",
@@ -467,8 +504,19 @@ export default function PostForm({
           };
         })
       );
+
+      // Busca anos FIPE disponíveis para a versão selecionada
+      if (opt && row?.brandId && matched?.modelCode) {
+        fetchRowYears(rowId, row.brandId, matched.modelCode);
+      } else {
+        setRowYears((prev) => {
+          const next = { ...prev };
+          delete next[rowId];
+          return next;
+        });
+      }
     },
-    [rowParsed]
+    [rowParsed, rows, fetchRowYears]
   );
 
   const updateRowField = useCallback(
@@ -816,8 +864,17 @@ export default function PostForm({
                     value={r.yearMin}
                     onChange={(e) => updateRowField(r.id, "yearMin", e.target.value)}
                     type="number"
-                    className="w-full border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-blue-500"
+                    className={`w-full border rounded px-1.5 py-1 text-xs focus:outline-none focus:border-blue-500 ${
+                      r.yearMin && r.versionCode && rowYears[r.id]?.length && !rowYears[r.id].includes(r.yearMin)
+                        ? "border-amber-400 bg-amber-50"
+                        : "border-gray-300"
+                    }`}
                   />
+                  {r.yearMin && r.versionCode && rowYears[r.id]?.length && !rowYears[r.id].includes(r.yearMin) && (
+                    <p className="text-[10px] text-amber-600 mt-0.5 leading-tight">
+                      Ano mínimo não disponível na Tabela FIPE para esta versão
+                    </p>
+                  )}
                 </div>
                 <div className="min-w-0">
                   <label className="block text-[10px] font-medium mb-0.5 text-gray-500 truncate">Ano max</label>
@@ -825,8 +882,17 @@ export default function PostForm({
                     value={r.yearMax}
                     onChange={(e) => updateRowField(r.id, "yearMax", e.target.value)}
                     type="number"
-                    className="w-full border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-blue-500"
+                    className={`w-full border rounded px-1.5 py-1 text-xs focus:outline-none focus:border-blue-500 ${
+                      r.yearMax && r.versionCode && rowYears[r.id]?.length && !rowYears[r.id].includes(r.yearMax)
+                        ? "border-amber-400 bg-amber-50"
+                        : "border-gray-300"
+                    }`}
                   />
+                  {r.yearMax && r.versionCode && rowYears[r.id]?.length && !rowYears[r.id].includes(r.yearMax) && (
+                    <p className="text-[10px] text-amber-600 mt-0.5 leading-tight">
+                      Ano máximo não disponível na Tabela FIPE para esta versão
+                    </p>
+                  )}
                 </div>
                 <div className="min-w-0">
                   <label className="block text-[10px] font-medium mb-0.5 text-gray-500 truncate">Grana (R$)</label>
