@@ -1,38 +1,29 @@
 [
   {
-    "id": "8d3c99a0-2823-43dd-b272-f3bf661b5de0",
-    "postAId": "acf387ba-b7a2-48b6-a856-90e2b97ce74e",
-    "postBId": "2093bad6-c37c-439f-8037-1737b9529e9a",
+    "id": "1d1fa5bb-b836-4cf2-bef8-be31469f8508",
+    "postAId": "5a0ec7af-6307-478c-a645-7510a604cdd8",
+    "postBId": "06e46176-ac8d-4043-95f9-3c7874e4d657",
     "score": 55,
     "suggestedCashFromA": 18826,
     "status": "pending",
-    "createdAt": "2026-06-10T16:06:05.696Z"
+    "createdAt": "2026-06-10T17:02:38.764Z"
   },
   {
-    "id": "d04238fb-4ecf-400d-a110-f8ce15f6f8ac",
-    "postAId": "72e0cd04-91f0-4b52-b35d-26794d2be156",
-    "postBId": "68f4494f-cc9e-4410-a517-25bc2eb47542",
+    "id": "05d2fd28-e2e5-4312-890f-9bd4796a2515",
+    "postAId": "0fc6ddd0-a641-4648-b8e2-9472a406b203",
+    "postBId": "14c5aaff-5f1f-436e-a625-468c4685cbe9",
     "score": 50,
     "suggestedCashFromA": 59234,
     "status": "pending",
-    "createdAt": "2026-06-10T16:06:05.696Z"
+    "createdAt": "2026-06-10T17:02:38.765Z"
   },
   {
-    "id": "2511009b-0d76-43f0-8d43-36ec8fc25cc7",
-    "postAId": "53d049af-defa-4d6a-b39f-e10819b3661d",
-    "postBId": "4903e5b4-1c6c-47b9-b39e-dc7aa18e774e",
+    "id": "9c7f131f-550f-46a9-8971-c0cd959bf0ee",
+    "postAId": "3c8a73ea-0984-4500-a05d-6b1e875d4116",
+    "postBId": "e99feeca-3e19-4da2-a120-20cd9c5561e4",
     "score": 45,
     "suggestedCashFromA": 42137,
     "status": "pending",
-    "createdAt": "2026-06-10T16:06:05.696Z"
-  },
-  {
-    "id": "420b70c0-6a54-45cb-a4e4-618898fd6da7",
-    "postAId": "312e2917-c6a9-473e-a708-aec95956bf42",
-    "postBId": "4b0b9acc-fc3e-42ae-8c14-fb23b91c34f5",
-    "score": 85,
-    "suggestedCashFromA": 0,
-    "status": "pending",
-    "createdAt": "2026-06-10T16:06:05.697Z"
+    "createdAt": "2026-06-10T17:02:38.765Z"
   }
 ]

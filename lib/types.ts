@@ -10,6 +10,10 @@ export interface CarDetail {
   model: string;
   year: number;
   estimatedValue: number;
+  /** FIPE codes for edit pre-fill */
+  fipeBrandId?: string;
+  fipeModelCode?: string;
+  fipeYearCode?: string;
 }
 
 export interface DesiredVehicle {
@@ -21,6 +25,9 @@ export interface DesiredVehicle {
   yearMax?: number;
   cashAdjustment: number;        // quanto o dono do post paga (+) ou recebe (-)
   cashAdjustmentTolerance: number; // ±tolerância
+  /** FIPE codes for edit pre-fill */
+  fipeBrandId?: string;
+  fipeVersionCode?: string;
 }
 
 export interface DesiredTrade {

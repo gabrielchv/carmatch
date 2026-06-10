@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import SearchableSelect, { type SelectOption } from "@/components/SearchableSelect";
 import { parseFipeModels, type VersionOption } from "@/lib/fipe-utils";
+import type { CarPost } from "@/lib/types";
 
 interface VehicleRow {
   id: number;
@@ -46,8 +47,15 @@ function freshRow(): VehicleRow {
 // Cache de dados FIPE parseados por brandId
 const fipeParsedCache = new Map<string, ReturnType<typeof parseFipeModels>>();
 
-export default function PostForm() {
+export default function PostForm({
+  initialData,
+  postId,
+}: {
+  initialData?: CarPost;
+  postId?: string;
+}) {
   const router = useRouter();
+  const isEdit = !!postId && !!initialData;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -55,6 +63,11 @@ export default function PostForm() {
   // ───── FIPE brands (global) ─────
   const [brands, setBrands] = useState<SelectOption[]>([]);
   const [brandsLoading, setBrandsLoading] = useState(true);
+
+  // ───── Modo edição ─────
+  const [existingImages, setExistingImages] = useState<string[]>(initialData?.images || []);
+  const [removedImages, setRemovedImages] = useState<string[]>([]);
+  const [editInitDone, setEditInitDone] = useState(false);
 
   // ───── Meu Carro ─────
   const [myBrandId, setMyBrandId] = useState("");
@@ -103,6 +116,165 @@ export default function PostForm() {
       .catch(() => setError("Erro ao carregar marcas da Tabela FIPE"))
       .finally(() => setBrandsLoading(false));
   }, []);
+
+  // ================================================================
+  // INIT – quando em modo edição, pré-preenche o formulário
+  // ================================================================
+  const initEditFormCalled = useRef(false);
+
+  useEffect(() => {
+    if (!isEdit || initEditFormCalled.current || brandsLoading || !brands.length) return;
+    (async () => {
+      initEditFormCalled.current = true;
+      try {
+        const data = initialData!;
+
+        // ── Título e descrição ──
+        const titleInput = document.querySelector<HTMLInputElement>("input[name=title]");
+        if (titleInput) titleInput.value = data.title;
+        const descInput = document.querySelector<HTMLTextAreaElement>("textarea[name=description]");
+        if (descInput) descInput.value = data.description;
+        const whatsappInput = document.querySelector<HTMLInputElement>("input[name=whatsapp]");
+        if (whatsappInput) whatsappInput.value = data.contactInfo.whatsapp || "";
+        const emailInput = document.querySelector<HTMLInputElement>("input[name=email]");
+        if (emailInput) emailInput.value = data.contactInfo.email || "";
+
+        // ── Meu Carro: marca ──
+        const brandId = data.car.fipeBrandId || brands.find(b => b.label === data.car.brand)?.value || "";
+        if (!brandId) {
+          setError(`Marca "${data.car.brand}" não encontrada na Tabela FIPE`);
+          return;
+        }
+        setMyBrandId(brandId);
+        setMyBrandLabel(data.car.brand);
+
+        // Aguarda modelos carregarem
+        const modelsRes = await fetch(`/api/fipe/models?brandId=${brandId}`);
+        const modelsData = await modelsRes.json();
+        const parsed = parseFipeModels(modelsData);
+        fipeParsedCache.set(brandId, parsed);
+        setMyParsed(parsed);
+
+        // Encontra a versão correta
+        let matchedVersion: VersionOption | undefined;
+        if (data.car.fipeModelCode) {
+          for (const versions of Object.values(parsed.versionsByGeneralModel)) {
+            matchedVersion = versions.find(v => v.modelCode === data.car.fipeModelCode);
+            if (matchedVersion) break;
+          }
+        }
+        if (!matchedVersion) {
+          for (const versions of Object.values(parsed.versionsByGeneralModel)) {
+            matchedVersion = versions.find(v => v.fullName === data.car.model);
+            if (matchedVersion) break;
+          }
+        }
+        if (!matchedVersion) {
+          // Fallback: pega a primeira versão do modelo geral (primeira palavra)
+          const firstWord = data.car.model.split(" ")[0];
+          const versions = parsed.versionsByGeneralModel[firstWord];
+          if (versions?.length) matchedVersion = versions[0];
+        }
+
+        if (matchedVersion) {
+          // Descobre o generalModel
+          let generalModel = "";
+          for (const [gm, versions] of Object.entries(parsed.versionsByGeneralModel)) {
+            if (versions.some(v => v.modelCode === matchedVersion!.modelCode)) {
+              generalModel = gm;
+              break;
+            }
+          }
+          setMyGeneralModel(generalModel);
+          setMyVersion(matchedVersion.version);
+          setMyVersionFullName(matchedVersion.fullName);
+          setMyVersionModelCode(matchedVersion.modelCode);
+
+          // Busca anos
+          const yearsRes = await fetch(`/api/fipe/years?brandId=${brandId}&modelId=${matchedVersion.modelCode}`);
+          if (yearsRes.ok) {
+            const yearsData: { codigo: string; nome: string }[] = await yearsRes.json();
+            const yearOpts = yearsData.map(y => ({ value: y.codigo, label: y.nome }));
+            setMyYears(yearOpts);
+
+            const yearCode = data.car.fipeYearCode || "";
+            const matchedYear = yearCode
+              ? yearOpts.find(y => y.value === yearCode)
+              : yearOpts.find(y => y.label === String(data.car.year));
+
+            if (matchedYear) {
+              setMyYearCode(matchedYear.value);
+              setMyYearNumber(String(data.car.year));
+
+              // Busca preço FIPE
+              const priceRes = await fetch(`/api/fipe/price?brandId=${brandId}&modelId=${matchedVersion.modelCode}&yearCode=${matchedYear.value}`);
+              if (priceRes.ok) {
+                const priceData = await priceRes.json();
+                const cleaned = priceData.Valor.replace(/[R$\s.]/g, "").replace(",", ".");
+                const price = parseFloat(cleaned);
+                if (!isNaN(price)) {
+                  setMyEstimatedValue(String(Math.round(price)));
+                }
+              }
+            }
+          }
+        }
+
+        // Força o valor estimado do anúncio (sobrescreve o preço FIPE)
+        setMyEstimatedValue(String(data.car.estimatedValue));
+        setMyEstimatedValueEdited(true);
+
+        // ── Veículos desejados ──
+        if (data.desiredTrade.vehicles.length > 0) {
+          const initializedRows: VehicleRow[] = await Promise.all(
+            data.desiredTrade.vehicles.map(async (v, idx) => {
+              const r: VehicleRow = {
+                id: ++rowId,
+                brandId: v.fipeBrandId || brands.find(b => b.label === v.brand)?.value || "",
+                brandLabel: v.brand,
+                generalModel: v.model || "",
+                versionCode: v.fipeVersionCode || "",
+                version: v.version || "",
+                versionLabel: "",
+                transmission: v.transmission || "",
+                yearMin: v.yearMin !== undefined ? String(v.yearMin) : "",
+                yearMax: v.yearMax !== undefined ? String(v.yearMax) : "",
+                cashAdj: String(v.cashAdjustment),
+                tolerance: String(v.cashAdjustmentTolerance),
+              };
+
+              if (idx === 0) {
+                // Para a primeira row, busca a marca e modelo
+                const rbId = v.fipeBrandId || brands.find(b => b.label === v.brand)?.value || "";
+                if (rbId) {
+                  r.brandId = rbId;
+                  // Carrega modelos para essa marca
+                  try {
+                    const cached = fipeParsedCache.get(rbId);
+                    if (!cached) {
+                      const res = await fetch(`/api/fipe/models?brandId=${rbId}`);
+                      const d: { codigo: number; nome: string }[] = await res.json();
+                      const p = parseFipeModels(d);
+                      fipeParsedCache.set(rbId, p);
+                      setRowParsed(prev => ({ ...prev, [r.id]: p }));
+                    } else {
+                      setRowParsed(prev => ({ ...prev, [r.id]: cached }));
+                    }
+                  } catch {}
+                }
+              }
+              return r;
+            })
+          );
+          setRows(initializedRows);
+        }
+
+        setEditInitDone(true);
+      } catch (err) {
+        console.error("Erro ao inicializar edição:", err);
+      }
+    })();
+  }, [isEdit, brands, brandsLoading, initialData]);
 
   // ================================================================
   // MEU CARRO – cascata (marca → modelo geral → versão → ano → preço)
@@ -329,11 +501,15 @@ export default function PostForm() {
       formData.set("model", myVersionFullName);
       formData.set("year", myYearNumber);
       formData.set("estimatedValue", myEstimatedValue);
+      formData.set("fipeBrandId", myBrandId);
+      formData.set("fipeModelCode", myVersionModelCode);
+      formData.set("fipeYearCode", myYearCode);
 
       // Veículos desejados – limpa e recria
       for (const key of [
         "vBrand", "vModel", "vVersion", "vTransmission",
         "vYearMin", "vYearMax", "vCashAdj", "vTolerance",
+        "vFipeBrandId", "vFipeVersionCode",
       ]) {
         formData.delete(key);
       }
@@ -347,15 +523,25 @@ export default function PostForm() {
         formData.append("vYearMax", r.yearMax);
         formData.append("vCashAdj", r.cashAdj);
         formData.append("vTolerance", r.tolerance);
+        formData.append("vFipeBrandId", r.brandId);
+        formData.append("vFipeVersionCode", r.versionCode);
       }
 
-      const res = await fetch("/api/posts", { method: "POST", body: formData });
+      // Imagens no modo edição
+      if (isEdit) {
+        const keep = existingImages.filter(img => !removedImages.includes(img));
+        formData.set("keepImages", JSON.stringify(keep));
+      }
+
+      const url = isEdit ? `/api/posts/${postId}` : "/api/posts";
+      const method = isEdit ? "PUT" : "POST";
+      const res = await fetch(url, { method, body: formData });
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Erro ao criar anúncio");
+        setError(data.error || (isEdit ? "Erro ao salvar alterações" : "Erro ao criar anúncio"));
         return;
       }
-      setSuccess("Anúncio publicado com sucesso!");
+      setSuccess(isEdit ? "Anúncio atualizado com sucesso!" : "Anúncio publicado com sucesso!");
       setTimeout(() => {
         router.push("/my-posts");
         router.refresh();
@@ -380,6 +566,12 @@ export default function PostForm() {
           required
           className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
           placeholder="Ex: Honda Fit 2008 - Excelente estado"
+        />
+        <textarea
+          name="description"
+          rows={3}
+          className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 resize-none"
+          placeholder="Descreva o estado do carro, opcionais, motivo da troca, etc. (opcional)"
         />
       </fieldset>
 
@@ -686,8 +878,38 @@ export default function PostForm() {
       {/* ─── Fotos ─── */}
       <fieldset className="border border-gray-200 rounded p-4 space-y-3">
         <legend className="font-semibold text-sm px-1">Fotos</legend>
+
+        {isEdit && existingImages.filter(img => !removedImages.includes(img)).length > 0 && (
+          <div>
+            <p className="text-xs font-medium text-gray-500 mb-1.5">Fotos atuais:</p>
+            <div className="flex gap-2 flex-wrap">
+              {existingImages
+                .filter(img => !removedImages.includes(img))
+                .map(img => (
+                  <div key={img} className="relative group">
+                    <img
+                      src={`/uploads/${img}`}
+                      alt="Foto do anúncio"
+                      className="w-20 h-16 object-cover rounded border border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setRemovedImages(prev => [...prev, img])}
+                      className="absolute -top-1.5 -right-1.5 bg-red-500 text-white w-5 h-5 rounded-full text-[11px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                      title="Remover foto"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
         <input name="images" type="file" multiple accept="image/*" className="text-sm" />
-        <p className="text-xs text-gray-400">Uma ou mais fotos do seu carro</p>
+        <p className="text-xs text-gray-400">
+          {isEdit ? "Selecione novas fotos para adicionar (as fotos mantidas acima serão preservadas)" : "Uma ou mais fotos do seu carro"}
+        </p>
       </fieldset>
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -699,7 +921,9 @@ export default function PostForm() {
           disabled={loading || !isSubmitReady}
           className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm"
         >
-          {loading ? "Publicando..." : "Publicar Anúncio"}
+          {loading
+            ? (isEdit ? "Salvando..." : "Publicando...")
+            : (isEdit ? "Salvar alterações" : "Publicar Anúncio")}
         </button>
         <button
           type="button"

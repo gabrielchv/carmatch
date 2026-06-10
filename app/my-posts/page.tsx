@@ -137,6 +137,15 @@ export default function MyPostsPage() {
                   </div>
                 </a>
 
+                <div className="px-4 pb-3 pt-1">
+                  <a
+                    href={`/posts/${post.id}/edit`}
+                    className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                  >
+                    Editar anúncio
+                  </a>
+                </div>
+
                 {postMatches.length > 0 && (
                   <div className="border-t border-gray-100 px-4 py-3 space-y-2">
                     <p className="text-xs font-medium text-gray-500">

@@ -57,6 +57,9 @@ export async function POST(request: Request) {
     const model = formData.get("model") as string;
     const year = Number(formData.get("year"));
     const estimatedValue = Number(formData.get("estimatedValue"));
+    const fipeBrandId = (formData.get("fipeBrandId") as string) || undefined;
+    const fipeModelCode = (formData.get("fipeModelCode") as string) || undefined;
+    const fipeYearCode = (formData.get("fipeYearCode") as string) || undefined;
     const whatsapp = (formData.get("whatsapp") as string) || undefined;
     const email = (formData.get("email") as string) || undefined;
 
@@ -69,6 +72,8 @@ export async function POST(request: Request) {
     const vehicleYearMax = formData.getAll("vYearMax") as string[];
     const vehicleCashAdj = formData.getAll("vCashAdj") as string[];
     const vehicleTolerance = formData.getAll("vTolerance") as string[];
+    const vehicleFipeBrandId = formData.getAll("vFipeBrandId") as string[];
+    const vehicleFipeVersionCode = formData.getAll("vFipeVersionCode") as string[];
 
     const vehicles: DesiredVehicle[] = [];
     for (let i = 0; i < vehicleBrands.length; i++) {
@@ -83,6 +88,8 @@ export async function POST(request: Request) {
         yearMax: vehicleYearMax[i] ? Number(vehicleYearMax[i]) : undefined,
         cashAdjustment: Number(vehicleCashAdj[i]) || 0,
         cashAdjustmentTolerance: Number(vehicleTolerance[i]) || 0,
+        fipeBrandId: vehicleFipeBrandId[i]?.trim() || undefined,
+        fipeVersionCode: vehicleFipeVersionCode[i]?.trim() || undefined,
       });
     }
 
@@ -109,7 +116,7 @@ export async function POST(request: Request) {
       userId: user.id,
       title,
       description,
-      car: { brand, model, year, estimatedValue },
+      car: { brand, model, year, estimatedValue, fipeBrandId, fipeModelCode, fipeYearCode },
       desiredTrade: { vehicles },
       contactInfo: { whatsapp, email },
       images: savedImages,

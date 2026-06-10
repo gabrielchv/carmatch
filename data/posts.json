@@ -1,7 +1,7 @@
 [
   {
-    "id": "acf387ba-b7a2-48b6-a856-90e2b97ce74e",
-    "userId": "7907e4de-ef08-4cdb-860a-4789c9ae2129",
+    "id": "5a0ec7af-6307-478c-a645-7510a604cdd8",
+    "userId": "0a8581fb-bf87-493a-8d35-03b3f3eee171",
     "title": "Honda Fit EX/S 1.5 Flex/Flexone 16V 5p Aut. 2005",
     "description": "",
     "car": {
@@ -27,12 +27,12 @@
       "email": "carlos@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-10T14:31:37.831Z",
+    "createdAt": "2026-06-10T17:02:38.757Z",
     "isActive": true
   },
   {
-    "id": "2093bad6-c37c-439f-8037-1737b9529e9a",
-    "userId": "26841a78-59f8-4e83-b908-d18fc1d5f357",
+    "id": "06e46176-ac8d-4043-95f9-3c7874e4d657",
+    "userId": "99bb18e4-ad5f-4cca-9f00-7420f93b18a6",
     "title": "Toyota PRIUS 1.8 16V 5p Aut. (Híbrido) 2012",
     "description": "",
     "car": {
@@ -59,12 +59,12 @@
       "email": "ana@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-10T14:31:37.831Z",
+    "createdAt": "2026-06-10T17:02:38.758Z",
     "isActive": true
   },
   {
-    "id": "72e0cd04-91f0-4b52-b35d-26794d2be156",
-    "userId": "3d999a8a-779e-49a1-ae45-4d3bd764c301",
+    "id": "0fc6ddd0-a641-4648-b8e2-9472a406b203",
+    "userId": "2ea92601-3740-4ff4-8596-b157b40e9910",
     "title": "Fiat Uno Mille Grazie 1.0 Fire Flex 8v 4p 2013",
     "description": "",
     "car": {
@@ -90,12 +90,12 @@
       "email": "roberto@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-10T14:31:37.831Z",
+    "createdAt": "2026-06-10T17:02:38.758Z",
     "isActive": true
   },
   {
-    "id": "68f4494f-cc9e-4410-a517-25bc2eb47542",
-    "userId": "eb82ee5f-8cfc-47ce-8892-b77d6e5bf56d",
+    "id": "14c5aaff-5f1f-436e-a625-468c4685cbe9",
+    "userId": "7d6fa80c-234a-4118-a694-3afee035bbc9",
     "title": "VW - VolksWagen Gol Last Edition 1.0 Flex 12V 5p 2023",
     "description": "",
     "car": {
@@ -121,12 +121,12 @@
       "email": "juliana@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-10T14:31:37.831Z",
+    "createdAt": "2026-06-10T17:02:38.758Z",
     "isActive": true
   },
   {
-    "id": "53d049af-defa-4d6a-b39f-e10819b3661d",
-    "userId": "8ae3d2db-a92c-42c8-a508-8d58f4577ab1",
+    "id": "3c8a73ea-0984-4500-a05d-6b1e875d4116",
+    "userId": "26a2ccd4-ca2d-4e5e-8760-19b522c9f387",
     "title": "GM - Chevrolet ONIX SD. P. PR. MIDNIGHT 1.0 TB Flex Aut 2021",
     "description": "",
     "car": {
@@ -151,12 +151,12 @@
       "email": "fernando@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-10T14:31:37.831Z",
+    "createdAt": "2026-06-10T17:02:38.758Z",
     "isActive": true
   },
   {
-    "id": "4903e5b4-1c6c-47b9-b39e-dc7aa18e774e",
-    "userId": "9c5735e9-fa35-4ca1-b2c6-8552d2a3ec90",
+    "id": "e99feeca-3e19-4da2-a120-20cd9c5561e4",
+    "userId": "8f4e3bff-8c5c-4f42-a00e-448a216a949f",
     "title": "GM - Chevrolet CRUZE Sport RS 1.4 16V TB Flex 5p Aut. 2022",
     "description": "",
     "car": {
@@ -181,12 +181,12 @@
       "email": "mariana@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-10T14:31:37.831Z",
+    "createdAt": "2026-06-10T17:02:38.758Z",
     "isActive": true
   },
   {
-    "id": "600f2440-f145-4a7e-85d0-db4cdf1dbc2d",
-    "userId": "7907e4de-ef08-4cdb-860a-4789c9ae2129",
+    "id": "74ea2450-a914-43c0-8d0e-e076539d5c2c",
+    "userId": "0a8581fb-bf87-493a-8d35-03b3f3eee171",
     "title": "Ford Ka 1.5 Sedan SEL 12V Flex 4p Aut. 2020",
     "description": "",
     "car": {
@@ -213,12 +213,12 @@
       "email": "carlos@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-10T14:31:37.831Z",
+    "createdAt": "2026-06-10T17:02:38.758Z",
     "isActive": true
   },
   {
-    "id": "0dc98c20-f0b5-494a-80ab-8847f2e8ce35",
-    "userId": "26841a78-59f8-4e83-b908-d18fc1d5f357",
+    "id": "91924cdc-d173-4af8-afe5-e2c690938b5e",
+    "userId": "99bb18e4-ad5f-4cca-9f00-7420f93b18a6",
     "title": "Hyundai HB20 Limited 1.0 TB Flex 12V Aut. 2026",
     "description": "",
     "car": {
@@ -245,65 +245,7 @@
       "email": "ana@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-10T14:31:37.831Z",
-    "isActive": true
-  },
-  {
-    "id": "312e2917-c6a9-473e-a708-aec95956bf42",
-    "userId": "087de483-e2ed-49f9-b3cb-cc700168e274",
-    "title": "Polo 2009",
-    "description": "",
-    "car": {
-      "brand": "VW - VolksWagen",
-      "model": "Polo GT 2.0 Mi Total Flex 8V 5p",
-      "year": 2009,
-      "estimatedValue": 46021
-    },
-    "desiredTrade": {
-      "vehicles": [
-        {
-          "brand": "VW - VolksWagen",
-          "model": "Golf",
-          "version": "GTE TSI 1.4 16V Híbrido",
-          "transmission": "Automático",
-          "yearMin": 2018,
-          "yearMax": 2020,
-          "cashAdjustment": 0,
-          "cashAdjustmentTolerance": 0
-        }
-      ]
-    },
-    "contactInfo": {},
-    "images": [],
-    "createdAt": "2026-06-10T16:04:16.417Z",
-    "isActive": true
-  },
-  {
-    "id": "4b0b9acc-fc3e-42ae-8c14-fb23b91c34f5",
-    "userId": "c5621f12-dd56-4fc7-af81-9add29cb89c4",
-    "title": "golf 2020",
-    "description": "",
-    "car": {
-      "brand": "VW - VolksWagen",
-      "model": "Golf GTE TSI 1.4 16V Híbrido Aut.",
-      "year": 2020,
-      "estimatedValue": 166330
-    },
-    "desiredTrade": {
-      "vehicles": [
-        {
-          "brand": "VW - VolksWagen",
-          "model": "Polo",
-          "yearMin": 2008,
-          "yearMax": 2012,
-          "cashAdjustment": 0,
-          "cashAdjustmentTolerance": 0
-        }
-      ]
-    },
-    "contactInfo": {},
-    "images": [],
-    "createdAt": "2026-06-10T16:06:05.696Z",
+    "createdAt": "2026-06-10T17:02:38.758Z",
     "isActive": true
   }
 ]
