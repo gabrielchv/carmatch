@@ -230,7 +230,7 @@ export default function SearchableSelect({
               <ul ref={listRef} role="listbox" className="py-1">
                 {filtered.map((opt, idx) => (
                   <li
-                    key={opt.value}
+                    key={`${opt.value}__${idx}`}
                     role="option"
                     aria-selected={opt.value === value}
                     className={`px-3 py-2 text-sm cursor-pointer transition-colors

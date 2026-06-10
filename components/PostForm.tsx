@@ -11,6 +11,8 @@ interface VehicleRow {
   brandLabel: string;
   // Modelo geral (primeira palavra FIPE, ex: "Fit")
   generalModel: string;
+  // Código FIPE da versão selecionada (usado como valor único no Select)
+  versionCode: string;
   // Versão específica (ex: "CX 1.4 Flex 16V 5p")
   version: string;
   versionLabel: string;
@@ -30,6 +32,7 @@ function freshRow(): VehicleRow {
     brandId: "",
     brandLabel: "",
     generalModel: "",
+    versionCode: "",
     version: "",
     versionLabel: "",
     transmission: "",
@@ -239,6 +242,7 @@ export default function PostForm() {
                 brandId: opt?.value || "",
                 brandLabel: opt?.label || "",
                 generalModel: "",
+                versionCode: "",
                 version: "",
                 versionLabel: "",
                 transmission: "",
@@ -264,7 +268,7 @@ export default function PostForm() {
       setRows((prev) =>
         prev.map((r) =>
           r.id === rowId
-            ? { ...r, generalModel: opt?.label || "", version: "", versionLabel: "", transmission: "" }
+            ? { ...r, generalModel: opt?.label || "", versionCode: "", version: "", versionLabel: "", transmission: "" }
             : r
         )
       );
@@ -274,17 +278,18 @@ export default function PostForm() {
 
   const handleRowVersionChange = useCallback(
     (rowId: number, opt: SelectOption | null) => {
-      // opt.value = version string, opt.label = version + trans display
+      // opt.value = FIPE modelCode (único), opt.label = version + trans display
       setRows((prev) =>
         prev.map((r) => {
           if (r.id !== rowId) return r;
-          // Busca a VersionOption para extrair transmission
+          // Busca a VersionOption pelo modelCode para extrair version e transmission
           const parsed = rowParsed[rowId];
           const versions = parsed?.versionsByGeneralModel[r.generalModel] || [];
-          const matched = versions.find((v) => v.version === opt?.value);
+          const matched = versions.find((v) => v.modelCode === opt?.value);
           return {
             ...r,
-            version: opt?.value || "",
+            versionCode: matched?.modelCode || "",
+            version: matched?.version || "",
             versionLabel: opt?.label || "",
             transmission: matched?.transmission || "",
           };
@@ -434,9 +439,9 @@ export default function PostForm() {
                   ? "Modelo primeiro"
                   : "Selecione a versão..."
               }
-              value={myVersion}
+              value={myVersionModelCode}
               options={(myParsed?.versionsByGeneralModel[myGeneralModel] || []).map((v) => ({
-                value: v.version,
+                value: v.modelCode,
                 label: v.transmission
                   ? `${v.version} · ${v.transmission}`
                   : v.version,
@@ -445,8 +450,8 @@ export default function PostForm() {
               onChange={(opt) => {
                 const parsed = myParsed;
                 const versions = parsed?.versionsByGeneralModel[myGeneralModel] || [];
-                const matched = versions.find((vv) => vv.version === opt?.value);
-                setMyVersion(opt?.value || "");
+                const matched = versions.find((vv) => vv.modelCode === opt?.value);
+                setMyVersion(matched?.version || "");
                 setMyVersionFullName(matched?.fullName || "");
                 setMyVersionModelCode(matched?.modelCode || "");
                 setMyEstimatedValueEdited(false);
@@ -530,7 +535,7 @@ export default function PostForm() {
           const versions: SelectOption[] = (
             parsed?.versionsByGeneralModel[r.generalModel] || []
           ).map((v) => ({
-            value: v.version,
+            value: v.modelCode,
             label: v.transmission
               ? `${v.version} · ${v.transmission}`
               : v.version,
@@ -588,7 +593,7 @@ export default function PostForm() {
                         ? "Modelo primeiro"
                         : "Selecione..."
                     }
-                    value={r.version}
+                    value={r.versionCode}
                     options={versions}
                     loading={false}
                     onChange={(opt) => handleRowVersionChange(r.id, opt)}

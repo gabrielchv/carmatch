@@ -56,12 +56,22 @@ export function parseFipeModels(models: FipeModelRaw[]): ParsedFipeModels {
     if (!versionsByGeneralModel[generalModel]) {
       versionsByGeneralModel[generalModel] = [];
     }
-    versionsByGeneralModel[generalModel].push({
-      version,
-      transmission,
-      fullName: name,
-      modelCode: String(m.codigo),
-    });
+
+    // Deduplica: a FIPE pode retornar o mesmo nome de versão com códigos diferentes
+    // (ex: mesmo modelo para faixas de ano distintas). Como são indistinguíveis
+    // para o usuário, mantemos apenas a primeira ocorrência.
+    const dupKey = `${version}::${transmission ?? ""}`;
+    const alreadyExists = versionsByGeneralModel[generalModel].some(
+      (existing) => `${existing.version}::${existing.transmission ?? ""}` === dupKey
+    );
+    if (!alreadyExists) {
+      versionsByGeneralModel[generalModel].push({
+        version,
+        transmission,
+        fullName: name,
+        modelCode: String(m.codigo),
+      });
+    }
   }
 
   const generalModels = [...modelSet].sort((a, b) =>
