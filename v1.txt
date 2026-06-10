@@ -1,7 +1,3 @@
-- edit the post
-- min/max year should check if there are models available for it
-- in the "o que eu quero na troca" menu, there should be an option for the user to select a 
-  category of vehicles and the average price
 - create chat
   - user can manually chat others
   - chat is automatically created when a match is found

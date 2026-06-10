@@ -23,7 +23,17 @@ interface VehicleRow {
   yearMax: string;
   cashAdj: string;
   tolerance: string;
+  // Vehicle type mode (SUV, Caminhonete, Hatch, Sedan)
+  isTypeMode: boolean;
+  vehicleType: string;
 }
+
+const VEHICLE_TYPES = [
+  { value: "SUV", label: "SUV" },
+  { value: "Caminhonete", label: "Caminhonete" },
+  { value: "Hatch", label: "Hatch" },
+  { value: "Sedan", label: "Sedan" },
+] as const;
 
 let rowId = 0;
 
@@ -41,6 +51,8 @@ function freshRow(): VehicleRow {
     yearMax: "",
     cashAdj: "0",
     tolerance: "0",
+    isTypeMode: false,
+    vehicleType: "",
   };
 }
 
@@ -248,7 +260,14 @@ export default function PostForm({
                 yearMax: v.yearMax !== undefined ? String(v.yearMax) : "",
                 cashAdj: String(v.cashAdjustment),
                 tolerance: String(v.cashAdjustmentTolerance),
+                isTypeMode: !!v.vehicleType,
+                vehicleType: v.vehicleType || "",
               };
+
+              if (v.vehicleType) {
+                // Vehicle type rows skip FIPE cascade loading
+                return r;
+              }
 
               if (idx === 0) {
                 // Para a primeira row, busca a marca e modelo
@@ -557,22 +576,34 @@ export default function PostForm({
       for (const key of [
         "vBrand", "vModel", "vVersion", "vTransmission",
         "vYearMin", "vYearMax", "vCashAdj", "vTolerance",
-        "vFipeBrandId", "vFipeVersionCode",
+        "vFipeBrandId", "vFipeVersionCode", "vVehicleType",
       ]) {
         formData.delete(key);
       }
       for (const r of rows) {
-        if (!r.brandLabel.trim()) continue;
-        formData.append("vBrand", r.brandLabel.trim());
-        formData.append("vModel", r.generalModel.trim());
-        formData.append("vVersion", r.version);
-        formData.append("vTransmission", r.transmission);
+        if (r.isTypeMode) {
+          if (!r.vehicleType.trim()) continue;
+          formData.append("vVehicleType", r.vehicleType.trim());
+          formData.append("vBrand", "");
+          formData.append("vModel", "");
+          formData.append("vVersion", "");
+          formData.append("vTransmission", "");
+          formData.append("vFipeBrandId", "");
+          formData.append("vFipeVersionCode", "");
+        } else {
+          if (!r.brandLabel.trim()) continue;
+          formData.append("vVehicleType", "");
+          formData.append("vBrand", r.brandLabel.trim());
+          formData.append("vModel", r.generalModel.trim());
+          formData.append("vVersion", r.version);
+          formData.append("vTransmission", r.transmission);
+          formData.append("vFipeBrandId", r.brandId);
+          formData.append("vFipeVersionCode", r.versionCode);
+        }
         formData.append("vYearMin", r.yearMin);
         formData.append("vYearMax", r.yearMax);
         formData.append("vCashAdj", r.cashAdj);
         formData.append("vTolerance", r.tolerance);
-        formData.append("vFipeBrandId", r.brandId);
-        formData.append("vFipeVersionCode", r.versionCode);
       }
 
       // Imagens no modo edição
@@ -762,8 +793,8 @@ export default function PostForm({
         <legend className="font-semibold text-sm px-1">O que eu quero na troca</legend>
 
         <p className="text-xs text-gray-500">
-          Adicione os carros que você aceitaria na troca. Selecione marca, modelo, versão e transmissão conforme a Tabela FIPE.
-          Cada um pode ter seu próprio ajuste de grana, ano e tolerância.
+          Adicione os carros que você aceitaria na troca, ou selecione um tipo de veículo (SUV, hatch, etc.) para ser mais flexível.
+          Cada linha pode ter seu próprio ajuste de grana, ano e tolerância.
         </p>
 
         {rows.map((r, idx) => {
@@ -795,55 +826,115 @@ export default function PostForm({
                 </button>
               </div>
 
-              {/* Marca + Modelo Geral + Versão */}
-              <div className="grid grid-cols-3 gap-2">
-                <div>
+              {/* Mode toggle: specific vehicle vs vehicle type */}
+              <div className="flex items-center gap-3 mb-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRows(prev => prev.map(r2 =>
+                      r2.id === r.id
+                        ? { ...r2, isTypeMode: false, vehicleType: "", brandId: "", brandLabel: "", generalModel: "", versionCode: "", version: "", versionLabel: "", transmission: "" }
+                        : r2
+                    ));
+                    setRowParsed(prev => { const n = { ...prev }; delete n[r.id]; return n; });
+                  }}
+                  className={`text-[11px] px-2.5 py-1 rounded-full transition-colors ${
+                    !r.isTypeMode
+                      ? 'bg-blue-100 text-blue-700 font-medium'
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  }`}
+                >
+                  Veículo específico
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRows(prev => prev.map(r2 =>
+                      r2.id === r.id
+                        ? { ...r2, isTypeMode: true, vehicleType: "", brandId: "", brandLabel: "", generalModel: "", versionCode: "", version: "", versionLabel: "", transmission: "" }
+                        : r2
+                    ));
+                    setRowParsed(prev => { const n = { ...prev }; delete n[r.id]; return n; });
+                  }}
+                  className={`text-[11px] px-2.5 py-1 rounded-full transition-colors ${
+                    r.isTypeMode
+                      ? 'bg-blue-100 text-blue-700 font-medium'
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  }`}
+                >
+                  Tipo de veículo
+                </button>
+              </div>
+
+              {r.isTypeMode ? (
+                /* Vehicle type mode: simple dropdown */
+                <div className="grid grid-cols-1 gap-2">
                   <SearchableSelect
-                    label="Marca"
-                    placeholder="Selecione..."
-                    value={r.brandId}
-                    options={brands}
-                    loading={brandsLoading}
-                    onChange={(opt) => handleRowBrandChange(r.id, opt)}
+                    label="Tipo de veículo"
+                    placeholder="Selecione o tipo..."
+                    value={r.vehicleType}
+                    options={[...VEHICLE_TYPES]}
+                    loading={false}
+                    onChange={(opt) => {
+                      setRows(prev => prev.map(r2 =>
+                        r2.id === r.id ? { ...r2, vehicleType: opt?.value || "" } : r2
+                      ));
+                    }}
                     required
                   />
                 </div>
-                <div>
-                  <SearchableSelect
-                    label="Modelo"
-                    key={`row-modelo-${r.id}-${r.brandId || "none"}`}
-                    placeholder={
-                      !r.brandId
-                        ? "Marca primeiro"
-                        : "Selecione..."
-                    }
-                    value={r.generalModel}
-                    options={generalModels}
-                    loading={rowParsedLoading[r.id] || false}
-                    onChange={(opt) => handleRowGeneralModelChange(r.id, opt)}
-                    disabled={!r.brandId}
-                  />
+              ) : (
+                /* Specific vehicle mode: brand + model + version */
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <SearchableSelect
+                      label="Marca"
+                      placeholder="Selecione..."
+                      value={r.brandId}
+                      options={brands}
+                      loading={brandsLoading}
+                      onChange={(opt) => handleRowBrandChange(r.id, opt)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <SearchableSelect
+                      label="Modelo"
+                      key={`row-modelo-${r.id}-${r.brandId || "none"}`}
+                      placeholder={
+                        !r.brandId
+                          ? "Marca primeiro"
+                          : "Selecione..."
+                      }
+                      value={r.generalModel}
+                      options={generalModels}
+                      loading={rowParsedLoading[r.id] || false}
+                      onChange={(opt) => handleRowGeneralModelChange(r.id, opt)}
+                      disabled={!r.brandId}
+                    />
+                  </div>
+                  <div>
+                    <SearchableSelect
+                      label="Versão"
+                      key={`row-version-${r.id}-${r.generalModel || "none"}`}
+                      placeholder={
+                        !r.generalModel
+                          ? "Modelo primeiro"
+                          : "Selecione..."
+                      }
+                      value={r.versionCode}
+                      options={versions}
+                      loading={false}
+                      onChange={(opt) => handleRowVersionChange(r.id, opt)}
+                      disabled={!r.generalModel}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <SearchableSelect
-                    label="Versão"
-                    key={`row-version-${r.id}-${r.generalModel || "none"}`}
-                    placeholder={
-                      !r.generalModel
-                        ? "Modelo primeiro"
-                        : "Selecione..."
-                    }
-                    value={r.versionCode}
-                    options={versions}
-                    loading={false}
-                    onChange={(opt) => handleRowVersionChange(r.id, opt)}
-                    disabled={!r.generalModel}
-                  />
-                </div>
-              </div>
+              )}
 
-              {/* Transmissão + Ano + Grana */}
-              <div className="grid grid-cols-5 gap-1">
+              {/* Ano + Grana */}
+              <div className={`grid gap-1 ${r.isTypeMode ? "grid-cols-4" : "grid-cols-5"}`}>
+                {!r.isTypeMode && (
                 <div className="min-w-0">
                   <label className="block text-[10px] font-medium mb-0.5 text-gray-500">
                     Transmissão
@@ -858,6 +949,7 @@ export default function PostForm({
                     <option value="Manual">Manual</option>
                   </select>
                 </div>
+                )}
                 <div className="min-w-0">
                   <label className="block text-[10px] font-medium mb-0.5 text-gray-500 truncate">Ano min</label>
                   <input

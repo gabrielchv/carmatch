@@ -37,8 +37,10 @@ export default function PostCard({ post }: { post: CarPost }) {
         </p>
         {firstVehicle && (
           <p className="text-xs text-blue-600 font-medium">
-            Quer {firstVehicle.brand}
-            {firstVehicle.model ? ` ${firstVehicle.model}` : ""}
+            Quer {firstVehicle.vehicleType
+              ? firstVehicle.vehicleType
+              : `${firstVehicle.brand}${firstVehicle.model ? ` ${firstVehicle.model}` : ""}`
+            }
             {" · "}
             {cashLabelShort(firstVehicle.cashAdjustment)}
           </p>

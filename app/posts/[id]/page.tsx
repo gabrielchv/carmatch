@@ -150,8 +150,11 @@ export default function PostDetailPage({
           {(post.desiredTrade.vehicles || []).map((v: DesiredVehicle, i: number) => (
             <div key={i} className="bg-gray-50 rounded p-3 text-sm">
               <p className="font-medium">
-                {v.brand}
-                {v.model ? ` ${v.model}` : ""}
+                {v.vehicleType
+                  ? v.vehicleType
+                  : `${v.brand}${v.model ? ` ${v.model}` : ""}`
+                }
+                {v.transmission ? ` · ${v.transmission}` : ""}
               </p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-gray-500">
                 {v.yearMin || v.yearMax ? (

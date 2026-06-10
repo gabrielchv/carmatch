@@ -28,6 +28,8 @@ export interface DesiredVehicle {
   /** FIPE codes for edit pre-fill */
   fipeBrandId?: string;
   fipeVersionCode?: string;
+  /** Vehicle body type — when set, brand/model/version are ignored in matching */
+  vehicleType?: 'SUV' | 'Caminhonete' | 'Hatch' | 'Sedan';
 }
 
 export interface DesiredTrade {

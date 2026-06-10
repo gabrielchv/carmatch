@@ -3,9 +3,25 @@ import { generateId, nowISO } from "./utils";
 import type { CarPost, Match, DesiredVehicle } from "./types";
 
 /**
+ * Infers the vehicle body type from a FIPE model name by checking for
+ * common keywords. Returns null when no body type can be inferred.
+ */
+function inferVehicleType(fipeName: string): string | null {
+  const lower = fipeName.toLowerCase();
+  if (lower.includes("hatchback") || lower.includes(" hatch")) return "Hatch";
+  if (lower.includes("sedan") || lower.includes(" sd.") || lower.includes(" sda")) return "Sedan";
+  if (lower.includes("suv")) return "SUV";
+  if (lower.includes("pick-up") || lower.includes("pickup") || lower.includes("caminhonete")) return "Caminhonete";
+  return null;
+}
+
+/**
  * Checks if a single DesiredVehicle matches an offered car.
  *
  * Regras de matching:
+ * - Tipo de veículo: se want.vehicleType está definido, verifica se o nome
+ *   FIPE do carro contém keywords que correspondem ao tipo desejado.
+ *   Se não for possível inferir o tipo, permite o match (permissivo).
  * - Marca: igualdade exata (case-insensitive)
  * - Modelo (geral): car.model DEVE COMEÇAR COM want.model
  *   Ex: want "Fit" casa com "Fit CX 1.4 Flex 16V 5p Aut."
@@ -18,43 +34,47 @@ function vehicleMatchesCar(
   car: CarPost["car"],
   want: DesiredVehicle
 ): boolean {
-  // Marca
-  if (want.brand && car.brand.toLowerCase() !== want.brand.toLowerCase()) {
-    return false;
-  }
+  // Vehicle type mode: check body type keywords in the offered car's FIPE name
+  if (want.vehicleType) {
+    const inferred = inferVehicleType(car.model);
+    // If we can infer the type and it doesn't match, reject
+    if (inferred && inferred !== want.vehicleType) return false;
+    // If we can't infer or it matches, fall through to year check
+  } else {
+    // Marca
+    if (want.brand && car.brand.toLowerCase() !== want.brand.toLowerCase()) {
+      return false;
+    }
 
-  const carModelLower = car.model.toLowerCase();
+    const carModelLower = car.model.toLowerCase();
 
-  // Modelo geral: car.model deve COMEÇAR com o modelo geral
-  if (want.model) {
-    const wantModel = want.model.toLowerCase().trim();
-    // Se o modelo geral for "City", "Civic" - verifica se começa com
-    // Mas preciso tomar cuidado com "CITY" vs "City" na FIPE
-    if (!carModelLower.startsWith(wantModel)) {
-      // Fallback: tenta ver se o modelo geral aparece como palavra após "CITY"/"City"
-      // Ex: "CITY Hatchback..." → want "City" não startsWith "CITY"
-      if (!carModelLower.includes(wantModel)) {
+    // Modelo geral: car.model deve COMEÇAR com o modelo geral
+    if (want.model) {
+      const wantModel = want.model.toLowerCase().trim();
+      if (!carModelLower.startsWith(wantModel)) {
+        if (!carModelLower.includes(wantModel)) {
+          return false;
+        }
+      }
+    }
+
+    // Versão específica: car.model deve conter a versão
+    if (want.version) {
+      if (!carModelLower.includes(want.version.toLowerCase().trim())) {
         return false;
       }
     }
-  }
 
-  // Versão específica: car.model deve conter a versão
-  if (want.version) {
-    if (!carModelLower.includes(want.version.toLowerCase().trim())) {
-      return false;
-    }
-  }
-
-  // Transmissão
-  if (want.transmission) {
-    const hasAuto = carModelLower.includes("aut.");
-    const hasManual = carModelLower.includes("mec.");
-    if (want.transmission === "Automático" && !hasAuto) {
-      return false;
-    }
-    if (want.transmission === "Manual" && !hasManual) {
-      return false;
+    // Transmissão
+    if (want.transmission) {
+      const hasAuto = carModelLower.includes("aut.");
+      const hasManual = carModelLower.includes("mec.");
+      if (want.transmission === "Automático" && !hasAuto) {
+        return false;
+      }
+      if (want.transmission === "Manual" && !hasManual) {
+        return false;
+      }
     }
   }
 
@@ -127,6 +147,15 @@ function matchLevel(
   want: DesiredVehicle
 ): number {
   let level = 0;
+
+  // Vehicle type mode: return 1 (basic level) if compatible
+  if (want.vehicleType) {
+    const inferred = inferVehicleType(car.model);
+    if (inferred === want.vehicleType) return 1;
+    // If can't infer, permissive — assume it could match
+    if (inferred === null) return 1;
+    return 0; // type mismatch
+  }
 
   // Marca (básico)
   if (

@@ -64,6 +64,7 @@ export async function POST(request: Request) {
     const email = (formData.get("email") as string) || undefined;
 
     // Monta array de vehicles a partir dos fields do form
+    const vehicleVehicleTypes = formData.getAll("vVehicleType") as string[];
     const vehicleBrands = formData.getAll("vBrand") as string[];
     const vehicleModels = formData.getAll("vModel") as string[];
     const vehicleVersions = formData.getAll("vVersion") as string[];
@@ -77,8 +78,25 @@ export async function POST(request: Request) {
 
     const vehicles: DesiredVehicle[] = [];
     for (let i = 0; i < vehicleBrands.length; i++) {
+      const vt = vehicleVehicleTypes[i]?.trim();
       const vb = vehicleBrands[i]?.trim();
-      if (!vb) continue; // pula linhas sem marca
+
+      // Vehicle type mode
+      if (vt) {
+        vehicles.push({
+          brand: "",
+          model: "",
+          cashAdjustment: Number(vehicleCashAdj[i]) || 0,
+          cashAdjustmentTolerance: Number(vehicleTolerance[i]) || 0,
+          yearMin: vehicleYearMin[i] ? Number(vehicleYearMin[i]) : undefined,
+          yearMax: vehicleYearMax[i] ? Number(vehicleYearMax[i]) : undefined,
+          vehicleType: vt as DesiredVehicle["vehicleType"],
+        });
+        continue;
+      }
+
+      // Specific vehicle mode: skip rows without brand
+      if (!vb) continue;
       vehicles.push({
         brand: vb,
         model: vehicleModels[i]?.trim() || "",
