@@ -3,6 +3,8 @@
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CarPost, User, DesiredVehicle } from "@/lib/types";
+import Link from "next/link";
+import { useChat } from "@/lib/chat-context";
 
 interface MatchResult {
   match: {
@@ -41,6 +43,7 @@ export default function PostDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const { startConversation } = useChat();
   const [post, setPost] = useState<CarPost | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [matches, setMatches] = useState<MatchResult[]>([]);
@@ -90,6 +93,10 @@ export default function PostDetailPage({
     } catch {
       setError("Erro ao excluir");
     }
+  };
+
+  const handleStartChat = () => {
+    startConversation(id);
   };
 
   if (loading) {
@@ -199,6 +206,23 @@ export default function PostDetailPage({
           )}
         </div>
       </section>
+
+      {/* Iniciar conversa (só se NÃO for o dono) */}
+      {!isOwner && user ? (
+        <button
+          onClick={handleStartChat}
+          className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors mb-6"
+        >
+          Conversar com o dono
+        </button>
+      ) : !isOwner && !user ? (
+        <Link
+          href={`/auth?redirectTo=/posts/${id}`}
+          className="block w-full text-center bg-blue-600 text-white px-4 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors mb-6"
+        >
+          Entre para conversar
+        </Link>
+      ) : null}
 
       {/* Dono pode editar / excluir */}
       {isOwner && (

@@ -61,3 +61,20 @@ export interface Match {
   status: "pending" | "contacted";
   createdAt: string;
 }
+
+export interface Conversation {
+  id: string;
+  postId: string;
+  participantIds: string[];  // exactly 2 user IDs
+  matchId?: string;          // set when auto-created from a match
+  createdAt: string;
+  updatedAt: string;         // bumped on each new message
+}
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  text: string;
+  createdAt: string;
+}

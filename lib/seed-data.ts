@@ -177,6 +177,8 @@ export async function seedDatabase(): Promise<{
   clearData("users");
   clearData("posts");
   clearData("matches");
+  clearData("conversations");
+  clearData("messages");
 
   // Users
   const users: User[] = MOCK_USERS.map((u) => ({

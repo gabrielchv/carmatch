@@ -1,6 +1,7 @@
 import { readData, writeData } from "./db";
 import { generateId, nowISO } from "./utils";
 import type { CarPost, Match, DesiredVehicle } from "./types";
+import { createConversationFromMatch } from "./chat";
 
 /**
  * Infers the vehicle body type from a FIPE model name by checking for
@@ -310,7 +311,9 @@ function findBestVehicleMatch(
  * cada um com o carro do outro, E a grana é compatível.
  */
 export function runMatching(): Match[] {
-  const posts = readData<CarPost>("posts").filter((p) => p.isActive);
+  const allPosts = readData<CarPost>("posts");
+  const posts = allPosts.filter((p) => p.isActive);
+  const postMap = new Map(allPosts.map((p) => [p.id, p]));
   let matches = readData<Match>("matches");
   const newMatches: Match[] = [];
 
@@ -354,5 +357,15 @@ export function runMatching(): Match[] {
   );
 
   writeData("matches", matches);
+
+  // Auto-create conversations for newly matched posts
+  for (const match of newMatches) {
+    const postA = postMap.get(match.postAId);
+    const postB = postMap.get(match.postBId);
+    if (postA && postB) {
+      createConversationFromMatch(match.id, postA.id, postA.userId, postB.userId);
+    }
+  }
+
   return newMatches;
 }

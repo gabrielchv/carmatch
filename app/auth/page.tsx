@@ -1,14 +1,16 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function AuthPage() {
+function AuthForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo") || "/my-posts";
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -28,7 +30,7 @@ export default function AuthPage() {
         return;
       }
 
-      router.push("/my-posts");
+      router.push(redirectTo);
       router.refresh();
     } catch {
       setError("Erro de conexão");
@@ -76,5 +78,17 @@ export default function AuthPage() {
         </button>
       </form>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-sm mx-auto mt-16 px-4 text-center text-gray-400">
+        Carregando...
+      </div>
+    }>
+      <AuthForm />
+    </Suspense>
   );
 }

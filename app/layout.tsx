@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import { ChatProvider } from "@/lib/chat-context";
+import ChatWidget from "@/components/ChatWidget";
 
 export const metadata: Metadata = {
   title: "CarMatch - Troque seu carro",
@@ -15,8 +17,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-gray-50 text-gray-900">
-        <Navbar />
-        <main className="flex-1">{children}</main>
+        <ChatProvider>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <ChatWidget />
+        </ChatProvider>
       </body>
     </html>
   );
