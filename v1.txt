@@ -1,6 +1,1 @@
 - improve score algorithm
-
-Pagina inicial 
-    - colocar localizacao e quilometragem
-    - adicionar menu lateral com as opcoes de filtro igual do OLX
-    - colocar botao de ordenar por valor e por data 

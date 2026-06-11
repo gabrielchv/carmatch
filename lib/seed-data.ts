@@ -18,6 +18,8 @@ const MOCK_USERS: { name: string; email: string }[] = [
   { name: "Juliana Costa", email: "juliana@email.com" },
   { name: "Fernando Lima", email: "fernando@email.com" },
   { name: "Mariana Souza", email: "mariana@email.com" },
+  { name: "Lucas Pereira", email: "lucas@email.com" },
+  { name: "Camila Rocha", email: "camila@email.com" },
 ];
 
 // ──────────────────────────────────────────────
@@ -49,23 +51,76 @@ const SEED_LOOKUPS: LookupEntry[] = [
 ];
 
 // Which lookup indices produce actual posts — these become CarPosts
-const POST_LOOKUP_INDICES = [0, 1, 2, 3, 4, 5, 6, 7];
+const POST_LOOKUP_INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 3, 7];
 
 // Map post index (position in POST_LOOKUP_INDICES) → user index
-const POST_USER_INDICES = [0, 1, 2, 3, 4, 5, 0, 1];
+const POST_USER_INDICES = [0, 1, 2, 3, 4, 5, 6, 7, 0, 1];
+
+// Per-post colour assignments — richer spread across the 15 defined colours
+const POST_COLORS = [
+  "Branco",   // 0: Fit
+  "Preto",    // 1: Prius
+  "Prata",    // 2: Uno
+  "Azul",     // 3: Gol
+  "Vermelho", // 4: Onix
+  "Cinza",    // 5: Cruze
+  "Marrom",   // 6: Ka
+  "Verde",    // 7: HB20
+  "Branco",   // 8: Gol (Match Perfeito pair — same color as HB20)
+  "Branco",   // 9: HB20 (Match Perfeito pair)
+];
+
+// Per-post location — spread across states and macro-regions
+const POST_CITIES = [
+  "São Paulo - SP",       // 0: Fit      → Sudeste
+  "São Paulo - SP",       // 1: Prius    → Sudeste
+  "Campinas - SP",        // 2: Uno      → Sudeste
+  "São Paulo - SP",       // 3: Gol      → Sudeste
+  "Belo Horizonte - MG",  // 4: Onix     → Sudeste
+  "Belo Horizonte - MG",  // 5: Cruze    → Sudeste
+  "Porto Alegre - RS",    // 6: Ka       → Sul
+  "Salvador - BA",        // 7: HB20     → Nordeste
+  "São Paulo - SP",       // 8: Gol (Match Perfeito pair — same city as HB20)
+  "São Paulo - SP",       // 9: HB20 (Match Perfeito pair)
+];
+
+// Per-post maxDistance — tests the location gate when both sides have it
+const POST_MAX_DISTANCE = [
+  undefined, undefined, undefined, undefined,
+  200,  // 4: Onix — same city as Cruze, both MG, passes gate
+  200,  // 5: Cruze
+  undefined, undefined,
+  undefined, undefined,
+];
 
 // Each entry: [postIndex, desiredCarLookupIndex]
 // The post at postIndex wants a car matching the FIPE data at desiredCarLookupIndex.
-// Everything is derived from the resolved FIPE data — no hardcoded model strings.
 const SEED_WANTS: [number, number][] = [
-  [0, 1], // Honda Fit     → wants a car like the Toyota Prius
-  [1, 0], // Toyota Prius  → wants a car like the Honda Fit
-  [2, 3], // Fiat Uno      → wants a car like the VW Gol
-  [3, 2], // VW Gol        → wants a car like the Fiat Uno
-  [4, 5], // Chevy Onix    → wants any Chevy (model stripped → brand-only match)
-  [5, 4], // Chevy Cruze   → wants any Chevy (model stripped → brand-only match)
-  [6, 8], // Ford Ka       → wants a car like the Jeep Compass
-  [7, 9], // Hyundai HB20  → wants a car like the Renault Duster
+  [0, 1],  // Honda Fit       → wants a car like the Toyota Prius
+  [1, 0],  // Toyota Prius    → wants a car like the Honda Fit
+  [2, 3],  // Fiat Uno        → wants a car like the VW Gol
+  [3, 2],  // VW Gol          → wants a car like the Fiat Uno
+  [4, 5],  // Chevy Onix      → wants any Chevy (brand-only match)
+  [5, 4],  // Chevy Cruze     → wants any Chevy (brand-only match)
+  [6, 8],  // Ford Ka         → wants a car like the Jeep Compass
+  [7, 9],  // Hyundai HB20    → wants a car like the Renault Duster
+  [8, 7],  // VW Gol (2023)   → wants a car like the Hyundai HB20 (Match Perfeito)
+  [9, 3],  // Hyundai HB20    → wants a car like the VW Gol (Match Perfeito)
+];
+
+// Per-want mileage bounds — exercises the new mileageMin/mileageMax scoring
+// Position i corresponds to SEED_WANTS[i]
+const WANT_MILEAGE_BOUNDS: [number | undefined, number | undefined][] = [
+  [undefined, 80000],   // 0: Fit → Prius, max 80k km
+  [undefined, 100000],  // 1: Prius → Fit, max 100k km
+  [undefined, 60000],   // 2: Uno → Gol, max 60k km
+  [undefined, 80000],   // 3: Gol → Uno, max 80k km
+  [undefined, 50000],   // 4: Onix → Cruze, max 50k km
+  [undefined, 50000],   // 5: Cruze → Onix, max 50k km
+  [undefined, 40000],   // 6: Ka → Compass, max 40k km
+  [undefined, 40000],   // 7: HB20 → Duster, max 40k km
+  [undefined, 50000],   // 8: Gol → HB20, max 50k km
+  [undefined, 50000],   // 9: HB20 → Gol, max 50k km
 ];
 
 // ──────────────────────────────────────────────
@@ -202,6 +257,7 @@ export async function seedDatabase(): Promise<{
   }
 
   // ── Pass 2: build posts with everything derived from FIPE ──
+  const currentYear = new Date().getFullYear();
   const posts: CarPost[] = POST_LOOKUP_INDICES.map((lookupIndex, postIndex) => {
     const car = resolved[lookupIndex];
 
@@ -220,9 +276,15 @@ export async function seedDatabase(): Promise<{
     const cashAdjustment = targetCar.estimatedValue - car.estimatedValue;
     const tolerance = Math.max(1, Math.round(0.2 * Math.abs(cashAdjustment)));
 
-    // Year range centered on the target car's actual FIPE year
+    // Year range centred on the target car's actual FIPE year
     const yearMin = targetCar.year - 3;
     const yearMax = targetCar.year + 3;
+
+    // Mileage bounds for this want (exercises the new scoring)
+    const wantMileageBounds = WANT_MILEAGE_BOUNDS.find((_, wi) => {
+      const sw = SEED_WANTS[wi];
+      return sw && sw[0] === postIndex;
+    });
 
     const desiredVehicle: DesiredVehicle = {
       brand: targetCar.brand,
@@ -231,6 +293,8 @@ export async function seedDatabase(): Promise<{
       transmission: isBrandOnly ? undefined : (targetCar.transmission ?? undefined),
       yearMin,
       yearMax,
+      mileageMin: wantMileageBounds?.[0],
+      mileageMax: wantMileageBounds?.[1],
       cashAdjustment,
       cashAdjustmentTolerance: tolerance,
     };
@@ -238,15 +302,9 @@ export async function seedDatabase(): Promise<{
     // Title auto-generated from FIPE data — never a hardcoded year.
     const title = `${car.brand} ${car.fullModelName} ${car.year}`;
 
-    const SEED_COLORS = ["Branco", "Preto", "Prata", "Azul", "Vermelho", "Cinza"];
-    const SEED_CITIES = [
-      "São Paulo - SP",
-      "São Paulo - SP",
-      "Campinas - SP",
-      "Rio de Janeiro - RJ",
-      "Belo Horizonte - MG",
-      "São Paulo - SP",
-    ];
+    // Realistic mileage based on car age (~12k km/year, minimum 5k)
+    const carAge = Math.max(1, currentYear - car.year);
+    const mileage = Math.round(Math.min(5000 + carAge * 12000, 200000));
 
     return {
       id: generateId(),
@@ -258,11 +316,14 @@ export async function seedDatabase(): Promise<{
         model: car.fullModelName,
         year: car.year,
         estimatedValue: car.estimatedValue,
-        mileage: 30000 + postIndex * 12000,
-        color: SEED_COLORS[postIndex % SEED_COLORS.length],
-        localization: SEED_CITIES[postIndex % SEED_CITIES.length],
+        mileage,
+        color: POST_COLORS[postIndex],
+        localization: POST_CITIES[postIndex],
       },
-      desiredTrade: { vehicles: [desiredVehicle] },
+      desiredTrade: {
+        vehicles: [desiredVehicle],
+        maxDistance: POST_MAX_DISTANCE[postIndex],
+      },
       contactInfo: {
         whatsapp: undefined,
         email: users[POST_USER_INDICES[postIndex]].email,

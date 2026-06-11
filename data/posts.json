@@ -1,14 +1,17 @@
 [
   {
-    "id": "db3bf4b1-8190-4e6d-a331-15a1e3f5cbae",
-    "userId": "649f3f47-337e-43d8-8db1-1eb201e1b682",
+    "id": "d6594230-ef83-4fd7-8bd9-3d76d4173011",
+    "userId": "0e0715e0-618c-4caa-be73-1ce68b12f137",
     "title": "Honda Fit EX/S 1.5 Flex/Flexone 16V 5p Aut. 2005",
     "description": "",
     "car": {
       "brand": "Honda",
       "model": "Fit EX/S 1.5 Flex/Flexone 16V 5p Aut.",
       "year": 2005,
-      "estimatedValue": 29117
+      "estimatedValue": 29117,
+      "mileage": 200000,
+      "color": "Branco",
+      "localization": "São Paulo - SP"
     },
     "desiredTrade": {
       "vehicles": [
@@ -18,6 +21,7 @@
           "version": "1.8 16V 5p Aut. (Híbrido)",
           "yearMin": 2009,
           "yearMax": 2015,
+          "mileageMax": 80000,
           "cashAdjustment": 18826,
           "cashAdjustmentTolerance": 3765
         }
@@ -27,19 +31,22 @@
       "email": "carlos@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-10T19:21:38.101Z",
+    "createdAt": "2026-06-11T20:15:07.137Z",
     "isActive": true
   },
   {
-    "id": "bc4c075e-afdb-4f03-9ef5-639836c2e125",
-    "userId": "34f37b8b-1cbd-420c-b187-16f57b37a4a7",
+    "id": "378eaf62-9cd1-4bd5-9ac1-1bec5f77c00a",
+    "userId": "aa1a4e76-b401-4ae3-9ee5-f708b2b6144c",
     "title": "Toyota PRIUS 1.8 16V 5p Aut. (Híbrido) 2012",
     "description": "",
     "car": {
       "brand": "Toyota",
       "model": "PRIUS 1.8 16V 5p Aut. (Híbrido)",
       "year": 2012,
-      "estimatedValue": 47943
+      "estimatedValue": 47943,
+      "mileage": 173000,
+      "color": "Preto",
+      "localization": "São Paulo - SP"
     },
     "desiredTrade": {
       "vehicles": [
@@ -50,6 +57,7 @@
           "transmission": "Automático",
           "yearMin": 2002,
           "yearMax": 2008,
+          "mileageMax": 100000,
           "cashAdjustment": -18826,
           "cashAdjustmentTolerance": 3765
         }
@@ -59,19 +67,22 @@
       "email": "ana@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-10T19:21:38.101Z",
+    "createdAt": "2026-06-11T20:15:07.137Z",
     "isActive": true
   },
   {
-    "id": "06fcdbc3-0093-4229-8bf3-6ff7fcc33ae8",
-    "userId": "6cc67a7e-92f7-4376-8dcf-6a816570f35d",
+    "id": "90719702-1848-41a5-9abc-6fc93dbde1fb",
+    "userId": "c8d7a553-ef93-4f39-95ea-68890c59b50c",
     "title": "Fiat Uno Mille Grazie 1.0 Fire Flex 8v 4p 2013",
     "description": "",
     "car": {
       "brand": "Fiat",
       "model": "Uno Mille Grazie 1.0 Fire Flex 8v 4p",
       "year": 2013,
-      "estimatedValue": 42680
+      "estimatedValue": 42680,
+      "mileage": 161000,
+      "color": "Prata",
+      "localization": "Campinas - SP"
     },
     "desiredTrade": {
       "vehicles": [
@@ -81,6 +92,7 @@
           "version": "Last Edition 1.0 Flex 12V 5p",
           "yearMin": 2020,
           "yearMax": 2026,
+          "mileageMax": 60000,
           "cashAdjustment": 59234,
           "cashAdjustmentTolerance": 11847
         }
@@ -90,19 +102,22 @@
       "email": "roberto@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-10T19:21:38.101Z",
+    "createdAt": "2026-06-11T20:15:07.137Z",
     "isActive": true
   },
   {
-    "id": "df3410e0-958c-4a51-855e-aebed421db30",
-    "userId": "33373975-d83a-49f6-af31-aaeb53ff09df",
+    "id": "ab4deffa-8739-4a48-af23-286aa85e5182",
+    "userId": "b41e25ae-cf14-493b-bc85-fe8c400ca0cc",
     "title": "VW - VolksWagen Gol Last Edition 1.0 Flex 12V 5p 2023",
     "description": "",
     "car": {
       "brand": "VW - VolksWagen",
       "model": "Gol Last Edition 1.0 Flex 12V 5p",
       "year": 2023,
-      "estimatedValue": 101914
+      "estimatedValue": 101914,
+      "mileage": 41000,
+      "color": "Azul",
+      "localization": "São Paulo - SP"
     },
     "desiredTrade": {
       "vehicles": [
@@ -112,6 +127,7 @@
           "version": "Mille Grazie 1.0 Fire Flex 8v 4p",
           "yearMin": 2010,
           "yearMax": 2016,
+          "mileageMax": 80000,
           "cashAdjustment": -59234,
           "cashAdjustmentTolerance": 11847
         }
@@ -121,19 +137,22 @@
       "email": "juliana@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-10T19:21:38.101Z",
+    "createdAt": "2026-06-11T20:15:07.137Z",
     "isActive": true
   },
   {
-    "id": "ed4f82f4-a983-4805-b7f7-7fba9f3cc562",
-    "userId": "03b9bb7f-ccd0-4e8b-9492-6748be543732",
+    "id": "0812cde7-2df2-4213-9bb9-a1cefcc3ccbe",
+    "userId": "ad123a1f-e441-4b8f-92d8-ce4c2637c54c",
     "title": "GM - Chevrolet ONIX SD. P. PR. MIDNIGHT 1.0 TB Flex Aut 2021",
     "description": "",
     "car": {
       "brand": "GM - Chevrolet",
       "model": "ONIX SD. P. PR. MIDNIGHT 1.0 TB Flex Aut",
       "year": 2021,
-      "estimatedValue": 70058
+      "estimatedValue": 70058,
+      "mileage": 65000,
+      "color": "Vermelho",
+      "localization": "Belo Horizonte - MG"
     },
     "desiredTrade": {
       "vehicles": [
@@ -142,28 +161,33 @@
           "model": "",
           "yearMin": 2019,
           "yearMax": 2025,
+          "mileageMax": 50000,
           "cashAdjustment": 42137,
           "cashAdjustmentTolerance": 8427
         }
-      ]
+      ],
+      "maxDistance": 200
     },
     "contactInfo": {
       "email": "fernando@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-10T19:21:38.101Z",
+    "createdAt": "2026-06-11T20:15:07.137Z",
     "isActive": true
   },
   {
-    "id": "1e83bd16-789d-49c4-8f79-b763838fe93d",
-    "userId": "2a1a26b8-c8a4-429c-98c3-d4fc837ca26c",
+    "id": "43a532dc-e676-4a29-851f-e9ceab81de46",
+    "userId": "caa99ce8-b6ab-4e77-99aa-839f3c4e4c25",
     "title": "GM - Chevrolet CRUZE Sport RS 1.4 16V TB Flex 5p Aut. 2022",
     "description": "",
     "car": {
       "brand": "GM - Chevrolet",
       "model": "CRUZE Sport RS 1.4 16V TB Flex 5p Aut.",
       "year": 2022,
-      "estimatedValue": 112195
+      "estimatedValue": 112195,
+      "mileage": 53000,
+      "color": "Cinza",
+      "localization": "Belo Horizonte - MG"
     },
     "desiredTrade": {
       "vehicles": [
@@ -172,28 +196,33 @@
           "model": "",
           "yearMin": 2018,
           "yearMax": 2024,
+          "mileageMax": 50000,
           "cashAdjustment": -42137,
           "cashAdjustmentTolerance": 8427
         }
-      ]
+      ],
+      "maxDistance": 200
     },
     "contactInfo": {
       "email": "mariana@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-10T19:21:38.101Z",
+    "createdAt": "2026-06-11T20:15:07.137Z",
     "isActive": true
   },
   {
-    "id": "829ebefe-1b98-46bc-888d-b81f5ba1ad27",
-    "userId": "649f3f47-337e-43d8-8db1-1eb201e1b682",
+    "id": "5cdc7a9f-1fac-4bde-8d1c-9c7643f0a957",
+    "userId": "89ed0ab5-fffc-460c-8b0b-007ff07c0b42",
     "title": "Ford Ka 1.5 Sedan SEL 12V Flex 4p Aut. 2020",
     "description": "",
     "car": {
       "brand": "Ford",
       "model": "Ka 1.5 Sedan SEL 12V Flex 4p Aut.",
       "year": 2020,
-      "estimatedValue": 56217
+      "estimatedValue": 56217,
+      "mileage": 77000,
+      "color": "Marrom",
+      "localization": "Porto Alegre - RS"
     },
     "desiredTrade": {
       "vehicles": [
@@ -204,28 +233,32 @@
           "transmission": "Automático",
           "yearMin": 2023,
           "yearMax": 2029,
+          "mileageMax": 40000,
           "cashAdjustment": 184662,
           "cashAdjustmentTolerance": 36932
         }
       ]
     },
     "contactInfo": {
-      "email": "carlos@email.com"
+      "email": "lucas@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-10T19:21:38.101Z",
+    "createdAt": "2026-06-11T20:15:07.137Z",
     "isActive": true
   },
   {
-    "id": "bf1daf99-8794-4e03-ae7e-1a446647b57e",
-    "userId": "34f37b8b-1cbd-420c-b187-16f57b37a4a7",
+    "id": "29161f32-adbf-4859-95a8-bffcc501808d",
+    "userId": "871d2529-4a5b-4fbf-8dfb-e0e9def267c7",
     "title": "Hyundai HB20 Limited 1.0 TB Flex 12V Aut. 2026",
     "description": "",
     "car": {
       "brand": "Hyundai",
       "model": "HB20 Limited 1.0 TB Flex 12V Aut.",
       "year": 2026,
-      "estimatedValue": 103643
+      "estimatedValue": 103643,
+      "mileage": 17000,
+      "color": "Verde",
+      "localization": "Salvador - BA"
     },
     "desiredTrade": {
       "vehicles": [
@@ -236,8 +269,80 @@
           "transmission": "Automático",
           "yearMin": 2021,
           "yearMax": 2027,
+          "mileageMax": 40000,
           "cashAdjustment": -9632,
           "cashAdjustmentTolerance": 1926
+        }
+      ]
+    },
+    "contactInfo": {
+      "email": "camila@email.com"
+    },
+    "images": [],
+    "createdAt": "2026-06-11T20:15:07.137Z",
+    "isActive": true
+  },
+  {
+    "id": "cd4d8fdd-9610-4084-84a5-bcf8ddbe1cdd",
+    "userId": "0e0715e0-618c-4caa-be73-1ce68b12f137",
+    "title": "VW - VolksWagen Gol Last Edition 1.0 Flex 12V 5p 2023",
+    "description": "",
+    "car": {
+      "brand": "VW - VolksWagen",
+      "model": "Gol Last Edition 1.0 Flex 12V 5p",
+      "year": 2023,
+      "estimatedValue": 101914,
+      "mileage": 41000,
+      "color": "Branco",
+      "localization": "São Paulo - SP"
+    },
+    "desiredTrade": {
+      "vehicles": [
+        {
+          "brand": "Hyundai",
+          "model": "HB20",
+          "version": "Limited 1.0 TB Flex 12V",
+          "transmission": "Automático",
+          "yearMin": 2023,
+          "yearMax": 2029,
+          "mileageMax": 50000,
+          "cashAdjustment": 1729,
+          "cashAdjustmentTolerance": 346
+        }
+      ]
+    },
+    "contactInfo": {
+      "email": "carlos@email.com"
+    },
+    "images": [],
+    "createdAt": "2026-06-11T20:15:07.137Z",
+    "isActive": true
+  },
+  {
+    "id": "4ae555b9-1cba-4745-9560-14f5bb56953b",
+    "userId": "aa1a4e76-b401-4ae3-9ee5-f708b2b6144c",
+    "title": "Hyundai HB20 Limited 1.0 TB Flex 12V Aut. 2026",
+    "description": "",
+    "car": {
+      "brand": "Hyundai",
+      "model": "HB20 Limited 1.0 TB Flex 12V Aut.",
+      "year": 2026,
+      "estimatedValue": 103643,
+      "mileage": 17000,
+      "color": "Branco",
+      "localization": "São Paulo - SP"
+    },
+    "desiredTrade": {
+      "vehicles": [
+        {
+          "brand": "VW - VolksWagen",
+          "model": "Gol",
+          "version": "Last Edition 1.0 Flex 12V 5p",
+          "yearMin": 2020,
+          "yearMax": 2026,
+          "mileageMax": 50000,
+          "cashAdjustment": -1729,
+          "cashAdjustmentTolerance": 346
         }
       ]
     },
@@ -245,71 +350,7 @@
       "email": "ana@email.com"
     },
     "images": [],
-    "createdAt": "2026-06-10T19:21:38.101Z",
-    "isActive": true
-  },
-  {
-    "id": "47d0f2a5-7137-4e61-a6f9-1b7aa103e976",
-    "userId": "6dadf9e9-2c49-415f-ac22-e15a833993f3",
-    "title": "civic zica",
-    "description": "",
-    "car": {
-      "brand": "Honda",
-      "model": "Civic Sedan EX 2.0 Flex 16V Aut.4p",
-      "year": 2021,
-      "estimatedValue": 122633,
-      "fipeBrandId": "25",
-      "fipeModelCode": "7692",
-      "fipeYearCode": "2021-5"
-    },
-    "desiredTrade": {
-      "vehicles": [
-        {
-          "brand": "Honda",
-          "model": "Fit",
-          "yearMin": 2001,
-          "yearMax": 2009,
-          "cashAdjustment": -80000,
-          "cashAdjustmentTolerance": 20000,
-          "fipeBrandId": "25"
-        }
-      ]
-    },
-    "contactInfo": {},
-    "images": [],
-    "createdAt": "2026-06-10T19:24:54.406Z",
-    "isActive": true
-  },
-  {
-    "id": "e7a6a12a-bb82-4000-b312-0076c63a69f1",
-    "userId": "30d4b96d-a466-43d8-9e99-aa39a5e60495",
-    "title": "fit zica",
-    "description": "",
-    "car": {
-      "brand": "Honda",
-      "model": "Fit LX 1.4/ 1.4 Flex 8V/16V 5p Aut.",
-      "year": 2008,
-      "estimatedValue": 35233,
-      "fipeBrandId": "25",
-      "fipeModelCode": "1275",
-      "fipeYearCode": "2008-1"
-    },
-    "desiredTrade": {
-      "vehicles": [
-        {
-          "brand": "",
-          "model": "",
-          "cashAdjustment": 80000,
-          "cashAdjustmentTolerance": 20000,
-          "yearMin": 2020,
-          "yearMax": 2025,
-          "vehicleType": "Sedan"
-        }
-      ]
-    },
-    "contactInfo": {},
-    "images": [],
-    "createdAt": "2026-06-10T19:25:32.526Z",
+    "createdAt": "2026-06-11T20:15:07.137Z",
     "isActive": true
   }
 ]

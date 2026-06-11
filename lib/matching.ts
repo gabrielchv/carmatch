@@ -2,6 +2,14 @@ import { readData, writeData } from "./db";
 import { generateId, nowISO } from "./utils";
 import type { CarPost, Match, DesiredVehicle } from "./types";
 import { createConversationFromMatch } from "./chat";
+import { getRegion } from "./brazil-regions";
+
+/* ─── Score thresholds ─────────────────────────────────────────── */
+
+const SCORE_PERFEITO = 76;
+const SCORE_SIMILAR = 36;
+
+/* ─── Helpers ──────────────────────────────────────────────────── */
 
 /**
  * Infers the vehicle body type from a FIPE model name by checking for
@@ -17,6 +25,59 @@ function inferVehicleType(fipeName: string): string | null {
 }
 
 /**
+ * Parses a localization string into city and state components.
+ * Handles "City, SP", "SP", "City - SP", and empty strings.
+ */
+function parseLocalization(loc: string): { city: string; state: string } {
+  if (!loc) return { city: "", state: "" };
+
+  if (loc.includes(",")) {
+    const parts = loc.split(",").map((s) => s.trim());
+    return { city: parts[0], state: parts[1] || "" };
+  }
+
+  if (loc.includes("-")) {
+    const parts = loc.split("-").map((s) => s.trim());
+    return { city: parts[0], state: parts[1] || "" };
+  }
+
+  // Two-letter state code alone e.g. "SP"
+  if (loc.trim().length === 2) {
+    return { city: "", state: loc.trim().toUpperCase() };
+  }
+
+  return { city: loc.trim(), state: "" };
+}
+
+/**
+ * Color families for proximity scoring.
+ */
+const COLOR_FAMILIES: Record<string, string> = {
+  branco: "light",
+  bege: "light",
+  prata: "light",
+  dourado: "light",
+  preto: "dark",
+  cinza: "dark",
+  marrom: "dark",
+  vermelho: "warm",
+  laranja: "warm",
+  amarelo: "warm",
+  bordeaux: "warm",
+  rosa: "warm",
+  azul: "cool",
+  verde: "cool",
+  roxo: "cool",
+};
+
+/** Returns the colour family, or null if the colour is not recognised. */
+function getColorFamily(color: string): string | null {
+  return COLOR_FAMILIES[color.toLowerCase()] ?? null;
+}
+
+/* ─── Bilaterial vehicle gate (unchanged) ──────────────────────── */
+
+/**
  * Checks if a single DesiredVehicle matches an offered car.
  *
  * Regras de matching:
@@ -25,22 +86,18 @@ function inferVehicleType(fipeName: string): string | null {
  *   Se não for possível inferir o tipo, permite o match (permissivo).
  * - Marca: igualdade exata (case-insensitive)
  * - Modelo (geral): car.model DEVE COMEÇAR COM want.model
- *   Ex: want "Fit" casa com "Fit CX 1.4 Flex 16V 5p Aut."
  * - Versão: car.model DEVE CONTER want.version (substring)
- *   Ex: want "CX 1.4" casa com "Fit CX 1.4 Flex 16V 5p Aut."
  * - Transmissão: car.model deve conter "Aut." ou "Mec." conforme
- * - Ano: bounds (unchanged)
+ * - Ano: bounds
  */
 function vehicleMatchesCar(
   car: CarPost["car"],
   want: DesiredVehicle
 ): boolean {
-  // Vehicle type mode: check body type keywords in the offered car's FIPE name
+  // Vehicle type mode
   if (want.vehicleType) {
     const inferred = inferVehicleType(car.model);
-    // If we can infer the type and it doesn't match, reject
     if (inferred && inferred !== want.vehicleType) return false;
-    // If we can't infer or it matches, fall through to year check
   } else {
     // Marca
     if (want.brand && car.brand.toLowerCase() !== want.brand.toLowerCase()) {
@@ -49,7 +106,7 @@ function vehicleMatchesCar(
 
     const carModelLower = car.model.toLowerCase();
 
-    // Modelo geral: car.model deve COMEÇAR com o modelo geral
+    // Modelo geral
     if (want.model) {
       const wantModel = want.model.toLowerCase().trim();
       if (!carModelLower.startsWith(wantModel)) {
@@ -59,7 +116,7 @@ function vehicleMatchesCar(
       }
     }
 
-    // Versão específica: car.model deve conter a versão
+    // Versão específica
     if (want.version) {
       if (!carModelLower.includes(want.version.toLowerCase().trim())) {
         return false;
@@ -70,12 +127,8 @@ function vehicleMatchesCar(
     if (want.transmission) {
       const hasAuto = carModelLower.includes("aut.");
       const hasManual = carModelLower.includes("mec.");
-      if (want.transmission === "Automático" && !hasAuto) {
-        return false;
-      }
-      if (want.transmission === "Manual" && !hasManual) {
-        return false;
-      }
+      if (want.transmission === "Automático" && !hasAuto) return false;
+      if (want.transmission === "Manual" && !hasManual) return false;
     }
   }
 
@@ -84,6 +137,8 @@ function vehicleMatchesCar(
   if (want.yearMax && car.year > want.yearMax) return false;
   return true;
 }
+
+/* ─── Cash gate (unchanged) ────────────────────────────────────── */
 
 interface CashRange {
   min: number;
@@ -134,122 +189,232 @@ function cashCompatible(
     return null;
   }
 
-  // Ambos querem pagar ou ambos querem receber — incompatível
+  // Ambos querem pagar ou ambos querem receber
   return null;
 }
 
+/* ─── Location gate (new) ──────────────────────────────────────── */
+
 /**
- * Verifica se um DesiredVehicle "encaixa" no carro oferecido,
- * considerando os critérios de marca, modelo, versão e transmissão.
- * Retorna quantos critérios foram atendidos (0-3) para pontuação.
+ * Location-based gate: when BOTH posts have maxDistance set AND their
+ * localisation can be parsed to a state, a pair in different states is
+ * rejected (assumed farther than the maxDistance).
  */
-function matchLevel(
+function locationGate(postA: CarPost, postB: CarPost): boolean {
+  const hasDistA = postA.desiredTrade.maxDistance !== undefined;
+  const hasDistB = postB.desiredTrade.maxDistance !== undefined;
+
+  // Gate only applies when both have maxDistance
+  if (!hasDistA || !hasDistB) return true;
+
+  const locA = parseLocalization(postA.car.localization || "");
+  const locB = parseLocalization(postB.car.localization || "");
+
+  // Can't compare without state-level location on both
+  if (!locA.state || !locB.state) return true;
+
+  // Different states → assume distance > maxDistance
+  if (locA.state !== locB.state) return false;
+
+  return true;
+}
+
+/* ─── Car Similarity scoring (new) ─────────────────────────────── */
+
+/**
+ * Calculates how similar two cars are across multiple dimensions.
+ * Returns 0–50.
+ */
+function calculateCarSimilarity(
+  carA: CarPost["car"],
+  carB: CarPost["car"]
+): number {
+  let score = 0;
+
+  // 1. Vehicle segment (max 8)
+  const typeA = inferVehicleType(carA.model);
+  const typeB = inferVehicleType(carB.model);
+  if (typeA && typeB) {
+    score += typeA === typeB ? 8 : 4;
+  } else {
+    score += 5; // neutral when one or both types can't be inferred
+  }
+
+  // 2. Value proximity (max 12)
+  const vA = carA.estimatedValue;
+  const vB = carB.estimatedValue;
+  if (vA > 0 && vB > 0) {
+    const ratio = Math.min(vA, vB) / Math.max(vA, vB);
+    if (ratio >= 0.9) score += 12;
+    else if (ratio >= 0.8) score += 9;
+    else if (ratio >= 0.65) score += 6;
+    else if (ratio >= 0.5) score += 3;
+    else score += 1;
+  }
+
+  // 3. Year proximity (max 8)
+  const yearDiff = Math.abs(carA.year - carB.year);
+  if (yearDiff <= 2) score += 8;
+  else if (yearDiff <= 5) score += 6;
+  else if (yearDiff <= 10) score += 4;
+  else score += 1;
+
+  // 4. Mileage proximity (max 5)
+  if (carA.mileage !== undefined && carB.mileage !== undefined) {
+    const diff = Math.abs(carA.mileage - carB.mileage);
+    if (diff <= 20000) score += 5;
+    else if (diff <= 50000) score += 3;
+    else if (diff <= 100000) score += 1;
+  } else {
+    score += 2; // neutral when mileage data is missing on one or both
+  }
+
+  // 5. Color similarity (max 3)
+  if (carA.color && carB.color) {
+    const a = carA.color.toLowerCase();
+    const b = carB.color.toLowerCase();
+    if (a === b) {
+      score += 3;
+    } else if (getColorFamily(a) === getColorFamily(b)) {
+      score += 1;
+    }
+  }
+
+  // 6. Location proximity (max 14)
+  const locA = parseLocalization(carA.localization || "");
+  const locB = parseLocalization(carB.localization || "");
+
+  if (locA.state && locB.state) {
+    if (locA.city && locB.city && locA.city.toLowerCase() === locB.city.toLowerCase()) {
+      score += 14; // same city
+    } else if (locA.state === locB.state) {
+      score += 10; // same state
+    } else {
+      const regA = getRegion(locA.state);
+      const regB = getRegion(locB.state);
+      if (regA && regB && regA === regB) {
+        score += 6; // same macro-region
+      } else {
+        score += 2; // different regions
+      }
+    }
+  } else {
+    score += 6; // neutral when location data is missing
+  }
+
+  return score;
+}
+
+/* ─── Desire Fulfilment scoring (new) ──────────────────────────── */
+
+/**
+ * Scores how well a DesiredVehicle matches an offered car.
+ * Returns 0–15.
+ */
+function calculateDesireFulfillment(
   car: CarPost["car"],
   want: DesiredVehicle
 ): number {
-  let level = 0;
+  let score = 0;
 
-  // Vehicle type mode: return 1 (basic level) if compatible
+  // Vehicle type mode — simplified scoring
   if (want.vehicleType) {
     const inferred = inferVehicleType(car.model);
-    if (inferred === want.vehicleType) return 1;
-    // If can't infer, permissive — assume it could match
-    if (inferred === null) return 1;
-    return 0; // type mismatch
+    if (inferred === want.vehicleType) return 10;
+    // Permissive: if we can't infer the type, assume it could match
+    if (inferred === null) return 5;
+    return 0;
   }
 
-  // Marca (básico)
-  if (
-    want.brand &&
-    car.brand.toLowerCase() === want.brand.toLowerCase()
-  ) {
-    level++;
+  // Brand (max 3)
+  if (want.brand && car.brand.toLowerCase() === want.brand.toLowerCase()) {
+    score += 3;
   }
 
-  // Modelo geral
+  // Model (max 3)
   if (want.model) {
     const carModelLower = car.model.toLowerCase();
     const wantModel = want.model.toLowerCase().trim();
-    if (
-      carModelLower.startsWith(wantModel) ||
-      carModelLower.includes(` ${wantModel}`)
-    ) {
-      level++;
+    if (carModelLower.startsWith(wantModel) || carModelLower.includes(` ${wantModel}`)) {
+      score += 3;
     }
   }
 
-  // Versão + Transmissão (detalhes)
-  if (want.version || want.transmission) {
-    let detailMatch = true;
-    if (want.version && !car.model.toLowerCase().includes(want.version.toLowerCase())) {
+  // Version + transmission (max 4)
+  let detailMatch = true;
+  if (want.version) {
+    if (!car.model.toLowerCase().includes(want.version.toLowerCase())) {
       detailMatch = false;
     }
-    if (detailMatch && want.transmission) {
-      const hasAuto = car.model.toLowerCase().includes("aut.");
-      const hasManual = car.model.toLowerCase().includes("mec.");
-      if (want.transmission === "Automático" && !hasAuto) detailMatch = false;
-      if (want.transmission === "Manual" && !hasManual) detailMatch = false;
-    }
-    if (detailMatch) level++;
+  }
+  if (detailMatch && want.transmission) {
+    const hasAuto = car.model.toLowerCase().includes("aut.");
+    const hasManual = car.model.toLowerCase().includes("mec.");
+    if (want.transmission === "Automático" && !hasAuto) detailMatch = false;
+    if (want.transmission === "Manual" && !hasManual) detailMatch = false;
+  }
+  if (detailMatch && (want.version || want.transmission)) {
+    score += 4;
   }
 
-  return level;
+  // Year within bounds (max 3)
+  if (want.yearMin !== undefined || want.yearMax !== undefined) {
+    let yearOk = true;
+    if (want.yearMin !== undefined && car.year < want.yearMin) yearOk = false;
+    if (want.yearMax !== undefined && car.year > want.yearMax) yearOk = false;
+    if (yearOk) score += 3;
+  }
+
+  // Mileage within bounds (max 2) — NEW
+  if (want.mileageMin !== undefined || want.mileageMax !== undefined) {
+    if (car.mileage !== undefined) {
+      let mileageOk = true;
+      if (want.mileageMin !== undefined && car.mileage < want.mileageMin) mileageOk = false;
+      if (want.mileageMax !== undefined && car.mileage > want.mileageMax) mileageOk = false;
+      if (mileageOk) score += 2;
+    }
+    // If car has no mileage data but bounds are set, skip (no penalty)
+  }
+
+  return Math.min(score, 15);
 }
 
+/* ─── Score calculation (rewritten) ────────────────────────────── */
+
 /**
- * Calcula a pontuação de um match entre dois vehicles desejados específicos.
- * Retorna score 0–100.
+ * Calculates the overall match score (0–100) using the new three-part
+ * breakdown: Car Similarity (50) + Desire Fulfilment (30) + Cash (20).
  */
 function calculateVehicleScore(
   carA: CarPost["car"],
   carB: CarPost["car"],
-  wantA: DesiredVehicle,  // A deseja B
-  wantB: DesiredVehicle,  // B deseja A
+  wantA: DesiredVehicle,
+  wantB: DesiredVehicle,
   suggestedCash: number | null
 ): number {
   let score = 0;
 
-  // Car match (max 40) — baseado no nível de detalhe do match de cada lado
-  const levelA = matchLevel(carB, wantA);
-  const levelB = matchLevel(carA, wantB);
-  const avgLevel = (levelA + levelB) / 2;
+  // Part 1: Car Similarity (max 50)
+  score += calculateCarSimilarity(carA, carB);
 
-  if (avgLevel >= 2.5) score += 40;      // ambos com detalhes
-  else if (avgLevel >= 1.5) score += 30; // um detalha, outro não
-  else if (avgLevel >= 0.5) score += 20; // só marca
-  else score += 10;                       // fallback
+  // Part 2: Desire Fulfilment (max 30)
+  score += calculateDesireFulfillment(carB, wantA); // A wants B's car
+  score += calculateDesireFulfillment(carA, wantB); // B wants A's car
 
-  // Year proximity (max 20)
-  const centerA =
-    wantA.yearMin && wantA.yearMax
-      ? (wantA.yearMin + wantA.yearMax) / 2
-      : null;
-  const centerB =
-    wantB.yearMin && wantB.yearMax
-      ? (wantB.yearMin + wantB.yearMax) / 2
-      : null;
-
-  if (centerA !== null && centerB !== null) {
-    const diff = Math.abs(centerA - centerB);
-    if (diff <= 2) score += 20;
-    else if (diff <= 5) score += 10;
-    else if (diff <= 10) score += 5;
-  } else {
-    score += 10;
-  }
-
-  // Cash alignment (max 40)
+  // Part 3: Cash Compatibility (max 20)
   if (suggestedCash !== null) {
     const absCash = Math.abs(suggestedCash);
-    if (absCash <= 1000) score += 40;
-    else if (absCash <= 5000) score += 30;
-    else if (absCash <= 15000) score += 20;
-    else if (absCash <= 30000) score += 10;
-    else score += 5;
+    if (absCash <= 500) score += 20;
+    else if (absCash <= 3000) score += 15;
+    else if (absCash <= 10000) score += 10;
+    else if (absCash <= 25000) score += 5;
+    else score += 2;
   }
 
   return Math.min(score, 100);
 }
+
+/* ─── Pair-level match finder (updated) ────────────────────────── */
 
 interface VehicleMatchResult {
   wantA: DesiredVehicle;
@@ -259,12 +424,16 @@ interface VehicleMatchResult {
 }
 
 /**
- * Para um par de posts (A, B), encontra a melhor combinação de veículos.
+ * For a pair of posts (A, B), applies all gates and finds the best
+ * combination of DesiredVehicles.
  */
 function findBestVehicleMatch(
   postA: CarPost,
   postB: CarPost
 ): VehicleMatchResult | null {
+  // Location gate: both have maxDistance but different states → reject
+  if (!locationGate(postA, postB)) return null;
+
   const aVehicles = postA.desiredTrade.vehicles || [];
   const bVehicles = postB.desiredTrade.vehicles || [];
 
@@ -305,10 +474,14 @@ function findBestVehicleMatch(
   return best;
 }
 
+/* ─── Main matching entry point (updated) ──────────────────────── */
+
 /**
  * Roda o matching entre todos os posts ativos.
- * Match é criado quando dois posts têm pelo menos um veículo compatível
- * cada um com o carro do outro, E a grana é compatível.
+ *
+ * Para cada par que passa todos os gates (vehicle, cash, location),
+ * calcula um score 0–100. Pairs com score abaixo de SCORE_SIMILAR
+ * são descartados. O resultado é gravado em data/matches.json.
  */
 export function runMatching(): Match[] {
   const allPosts = readData<CarPost>("posts");
@@ -325,6 +498,9 @@ export function runMatching(): Match[] {
       const best = findBestVehicleMatch(postA, postB);
       if (!best) continue;
 
+      // Filter out low-scoring pairs
+      if (best.score < SCORE_SIMILAR) continue;
+
       const existingIndex = matches.findIndex(
         (m) =>
           (m.postAId === postA.id && m.postBId === postB.id) ||
@@ -335,7 +511,7 @@ export function runMatching(): Match[] {
         id: existingIndex >= 0 ? matches[existingIndex].id : generateId(),
         postAId: postA.id,
         postBId: postB.id,
-        score: best.score,
+        score: Math.round(best.score),
         suggestedCashFromA: best.suggestedCash,
         status: "pending",
         createdAt: nowISO(),

@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import type { CarPost, User, Match } from "@/lib/types";
 import MatchCard from "@/components/MatchCard";
 
+/* Score threshold — keep in sync with lib/matching.ts */
+const SCORE_PERFEITO = 76;
+
 interface MatchResult {
   match: Match;
   otherPost: CarPost | null;
@@ -98,6 +101,14 @@ export default function MyPostsPage() {
         <div className="space-y-6">
           {posts.map((post) => {
             const postMatches = matchesMap[post.id] || [];
+
+            const perfeitos = postMatches.filter(
+              (m) => m.match.score >= SCORE_PERFEITO
+            );
+            const similares = postMatches.filter(
+              (m) => m.match.score < SCORE_PERFEITO
+            );
+
             return (
               <div
                 key={post.id}
@@ -129,10 +140,20 @@ export default function MyPostsPage() {
                       </p>
                     </div>
                     {postMatches.length > 0 && (
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-medium shrink-0">
-                        {postMatches.length} match
-                        {postMatches.length > 1 ? "s" : ""}
-                      </span>
+                      <div className="shrink-0 flex items-center gap-1">
+                        {perfeitos.length > 0 && (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-medium">
+                            {perfeitos.length} perfeito
+                            {perfeitos.length > 1 ? "s" : ""}
+                          </span>
+                        )}
+                        {similares.length > 0 && (
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium">
+                            {similares.length} similar
+                            {similares.length > 1 ? "es" : ""}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </a>
@@ -147,18 +168,42 @@ export default function MyPostsPage() {
                 </div>
 
                 {postMatches.length > 0 && (
-                  <div className="border-t border-gray-100 px-4 py-3 space-y-2">
-                    <p className="text-xs font-medium text-gray-500">
-                      Matchs encontrados:
-                    </p>
-                    {postMatches.map((m) => (
-                      <MatchCard
-                        key={m.match.id}
-                        match={m.match}
-                        otherPost={m.otherPost}
-                        currentUserId={user.id}
-                      />
-                    ))}
+                  <div className="border-t border-gray-100 px-4 py-3 space-y-3">
+                    {perfeitos.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-green-700 mb-2">
+                          Match Perfeito · {perfeitos.length}
+                        </p>
+                        <div className="space-y-2">
+                          {perfeitos.map((m) => (
+                            <MatchCard
+                              key={m.match.id}
+                              match={m.match}
+                              otherPost={m.otherPost}
+                              currentUserId={user.id}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {similares.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-blue-700 mb-2">
+                          Match Similar · {similares.length}
+                        </p>
+                        <div className="space-y-2">
+                          {similares.map((m) => (
+                            <MatchCard
+                              key={m.match.id}
+                              match={m.match}
+                              otherPost={m.otherPost}
+                              currentUserId={user.id}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

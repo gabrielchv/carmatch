@@ -1,50 +1,58 @@
 [
   {
-    "id": "649f3f47-337e-43d8-8db1-1eb201e1b682",
+    "id": "0e0715e0-618c-4caa-be73-1ce68b12f137",
     "name": "Carlos Silva",
     "email": "carlos@email.com",
-    "createdAt": "2026-06-10T19:21:33.945Z"
+    "provider": "email",
+    "createdAt": "2026-06-11T20:14:59.688Z"
   },
   {
-    "id": "34f37b8b-1cbd-420c-b187-16f57b37a4a7",
+    "id": "aa1a4e76-b401-4ae3-9ee5-f708b2b6144c",
     "name": "Ana Oliveira",
     "email": "ana@email.com",
-    "createdAt": "2026-06-10T19:21:33.945Z"
+    "provider": "email",
+    "createdAt": "2026-06-11T20:14:59.688Z"
   },
   {
-    "id": "6cc67a7e-92f7-4376-8dcf-6a816570f35d",
+    "id": "c8d7a553-ef93-4f39-95ea-68890c59b50c",
     "name": "Roberto Santos",
     "email": "roberto@email.com",
-    "createdAt": "2026-06-10T19:21:33.945Z"
+    "provider": "email",
+    "createdAt": "2026-06-11T20:14:59.688Z"
   },
   {
-    "id": "33373975-d83a-49f6-af31-aaeb53ff09df",
+    "id": "b41e25ae-cf14-493b-bc85-fe8c400ca0cc",
     "name": "Juliana Costa",
     "email": "juliana@email.com",
-    "createdAt": "2026-06-10T19:21:33.945Z"
+    "provider": "email",
+    "createdAt": "2026-06-11T20:14:59.688Z"
   },
   {
-    "id": "03b9bb7f-ccd0-4e8b-9492-6748be543732",
+    "id": "ad123a1f-e441-4b8f-92d8-ce4c2637c54c",
     "name": "Fernando Lima",
     "email": "fernando@email.com",
-    "createdAt": "2026-06-10T19:21:33.945Z"
+    "provider": "email",
+    "createdAt": "2026-06-11T20:14:59.688Z"
   },
   {
-    "id": "2a1a26b8-c8a4-429c-98c3-d4fc837ca26c",
+    "id": "caa99ce8-b6ab-4e77-99aa-839f3c4e4c25",
     "name": "Mariana Souza",
     "email": "mariana@email.com",
-    "createdAt": "2026-06-10T19:21:33.945Z"
+    "provider": "email",
+    "createdAt": "2026-06-11T20:14:59.688Z"
   },
   {
-    "id": "6dadf9e9-2c49-415f-ac22-e15a833993f3",
-    "name": "gab",
-    "email": "gab@gmail.com",
-    "createdAt": "2026-06-10T19:22:25.135Z"
+    "id": "89ed0ab5-fffc-460c-8b0b-007ff07c0b42",
+    "name": "Lucas Pereira",
+    "email": "lucas@email.com",
+    "provider": "email",
+    "createdAt": "2026-06-11T20:14:59.688Z"
   },
   {
-    "id": "30d4b96d-a466-43d8-9e99-aa39a5e60495",
-    "name": "pedro",
-    "email": "pepe@email.com",
-    "createdAt": "2026-06-10T19:22:34.697Z"
+    "id": "871d2529-4a5b-4fbf-8dfb-e0e9def267c7",
+    "name": "Camila Rocha",
+    "email": "camila@email.com",
+    "provider": "email",
+    "createdAt": "2026-06-11T20:14:59.688Z"
   }
 ]

@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { CarPost, Match } from "@/lib/types";
 
+/* Score thresholds — keep in sync with lib/matching.ts */
+const SCORE_PERFEITO = 76;
+
 interface MatchCardProps {
   match: Match;
   otherPost: CarPost | null;
@@ -27,8 +30,20 @@ export default function MatchCard({
     ? -match.suggestedCashFromA
     : match.suggestedCashFromA;
 
+  const isPerfeito = match.score >= SCORE_PERFEITO;
+
+  const cardStyle = isPerfeito
+    ? "border-green-200 bg-green-50"
+    : "border-blue-200 bg-blue-50";
+
+  const badgeStyle = isPerfeito
+    ? "bg-green-200 text-green-800"
+    : "bg-blue-200 text-blue-800";
+
+  const label = isPerfeito ? "Match Perfeito" : "Match Similar";
+
   return (
-    <div className="border border-green-200 rounded-lg p-4 bg-green-50">
+    <div className={`border rounded-lg p-4 ${cardStyle}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="font-medium text-sm truncate">{otherPost.title}</p>
@@ -41,15 +56,9 @@ export default function MatchCard({
         </div>
         <div className="text-right shrink-0">
           <span
-            className={`inline-block text-xs font-bold px-2 py-0.5 rounded ${
-              match.score >= 70
-                ? "bg-green-200 text-green-800"
-                : match.score >= 40
-                ? "bg-yellow-200 text-yellow-800"
-                : "bg-gray-200 text-gray-700"
-            }`}
+            className={`inline-block text-xs font-bold px-2 py-0.5 rounded ${badgeStyle}`}
           >
-            {match.score}% compatível
+            {label} · {match.score}%
           </span>
         </div>
       </div>
