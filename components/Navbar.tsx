@@ -9,6 +9,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  avatar?: string;
 }
 
 export default function Navbar() {
@@ -92,7 +93,16 @@ export default function Navbar() {
                   </span>
                 )}
               </button>
-              <span className="text-gray-500">{user.name}</span>
+              <span className="text-gray-500 flex items-center gap-1.5">
+                {user.avatar && (
+                  <img
+                    src={user.avatar}
+                    alt=""
+                    className="w-6 h-6 rounded-full"
+                  />
+                )}
+                {user.name}
+              </span>
               <button
                 onClick={handleLogout}
                 className="text-red-500 hover:text-red-700 transition-colors"

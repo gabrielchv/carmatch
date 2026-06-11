@@ -1,3 +1,18 @@
-- create chat
-  - user can manually chat others
-  - chat is automatically created when a match is found
+- add kilometragem on creating post
+- improve score algorithm
+
+Pagina inicial 
+    - colocar localizacao e quilometragem
+    - adicionar menu lateral com as opcoes de filtro igual do OLX
+    - colocar botao de ordenar por valor e por data 
+
+Quando for anunciar carro
+    - incluir campo de localizacao
+    - incluir campo de quilomatragem atual do carro
+    - incluir cor 
+
+
+No carro que esta buscando
+    - colocar range de quilometragem
+    - colocar range de localizacao (raio)
+    

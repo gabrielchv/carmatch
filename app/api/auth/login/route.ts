@@ -23,6 +23,7 @@ export async function POST(request: Request) {
         id: generateId(),
         name,
         email,
+        provider: "email",
         createdAt: nowISO(),
       };
       addItem("users", user);

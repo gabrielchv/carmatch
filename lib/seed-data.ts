@@ -185,6 +185,7 @@ export async function seedDatabase(): Promise<{
     id: generateId(),
     name: u.name,
     email: u.email,
+    provider: "email" as const,
     createdAt: nowISO(),
   }));
   for (const user of users) addItem("users", user);
