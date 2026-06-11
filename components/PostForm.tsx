@@ -3,8 +3,8 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import SearchableSelect, { type SelectOption } from "@/components/SearchableSelect";
+import LocationSelect from "@/components/LocationSelect";
 import { parseFipeModels, type VersionOption } from "@/lib/fipe-utils";
-import { BRAZIL_CITIES } from "@/lib/brazil-cities";
 import type { CarPost } from "@/lib/types";
 
 interface VehicleRow {
@@ -864,13 +864,10 @@ export default function PostForm({
             </select>
           </div>
           <div>
-            <SearchableSelect
+            <LocationSelect
               label="Localização"
-              placeholder="Selecione sua cidade..."
               value={localization}
-              options={BRAZIL_CITIES}
-              loading={false}
-              onChange={(opt) => setLocalization(opt?.value || "")}
+              onChange={(val) => setLocalization(val)}
             />
           </div>
         </div>

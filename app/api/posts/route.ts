@@ -14,6 +14,16 @@ export async function GET(request: Request) {
   const q = searchParams.get("q")?.toLowerCase();
   const minPrice = searchParams.get("minPrice");
   const maxPrice = searchParams.get("maxPrice");
+  const brand = searchParams.get("brand")?.toLowerCase();
+  const model = searchParams.get("model")?.toLowerCase();
+  const yearMin = searchParams.get("yearMin");
+  const yearMax = searchParams.get("yearMax");
+  const mileageMin = searchParams.get("mileageMin");
+  const mileageMax = searchParams.get("mileageMax");
+  const localization = searchParams.get("localization")?.toLowerCase();
+  const desiredType = searchParams.get("desiredType")?.toLowerCase();
+  const sortBy = searchParams.get("sortBy") || "date";
+  const sortOrder = searchParams.get("sortOrder") || "desc";
 
   let posts = readData<CarPost>("posts").filter((p) => p.isActive);
 
@@ -35,9 +45,63 @@ export async function GET(request: Request) {
     posts = posts.filter((p) => p.car.estimatedValue <= Number(maxPrice));
   }
 
-  posts.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  // Marca
+  if (brand) {
+    posts = posts.filter((p) => p.car.brand.toLowerCase().includes(brand));
+  }
+
+  // Modelo
+  if (model) {
+    posts = posts.filter((p) => p.car.model.toLowerCase().includes(model));
+  }
+
+  // Ano
+  if (yearMin) {
+    posts = posts.filter((p) => p.car.year >= Number(yearMin));
+  }
+  if (yearMax) {
+    posts = posts.filter((p) => p.car.year <= Number(yearMax));
+  }
+
+  // Quilometragem
+  if (mileageMin) {
+    posts = posts.filter((p) => p.car.mileage !== undefined && p.car.mileage >= Number(mileageMin));
+  }
+  if (mileageMax) {
+    posts = posts.filter((p) => p.car.mileage !== undefined && p.car.mileage <= Number(mileageMax));
+  }
+
+  // Localização
+  if (localization) {
+    posts = posts.filter(
+      (p) => p.car.localization && p.car.localization.toLowerCase().includes(localization)
+    );
+  }
+
+  // Tipo de veículo desejado
+  if (desiredType) {
+    const types = desiredType.split(",");
+    posts = posts.filter((p) =>
+      p.desiredTrade.vehicles.some(
+        (v) => v.vehicleType && types.includes(v.vehicleType.toLowerCase())
+      )
+    );
+  }
+
+  // Ordenação
+  if (sortBy === "value") {
+    posts.sort((a, b) =>
+      sortOrder === "asc"
+        ? a.car.estimatedValue - b.car.estimatedValue
+        : b.car.estimatedValue - a.car.estimatedValue
+    );
+  } else {
+    posts.sort((a, b) =>
+      sortOrder === "asc"
+        ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
 
   return NextResponse.json({ posts });
 }
