@@ -27,13 +27,6 @@ const MILEAGE_OPTIONS = [
 
 const VEHICLE_TYPES = ["SUV", "Hatch", "Sedan", "Caminhonete"];
 
-const SORT_OPTIONS = [
-  { label: "Data ↓", sortBy: "date", sortOrder: "desc" },
-  { label: "Data ↑", sortBy: "date", sortOrder: "asc" },
-  { label: "Valor ↓", sortBy: "value", sortOrder: "desc" },
-  { label: "Valor ↑", sortBy: "value", sortOrder: "asc" },
-];
-
 export default function FilterSidebar({
   isOpen,
   onClose,
@@ -44,7 +37,6 @@ export default function FilterSidebar({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [q, setQ] = useState(searchParams.get("q") || "");
   const [minPrice, setMinPrice] = useState(searchParams.get("minPrice") || "");
   const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") || "");
   const [brand, setBrand] = useState(searchParams.get("brand") || "");
@@ -69,10 +61,6 @@ export default function FilterSidebar({
     {}
   );
   const [availableModels, setAvailableModels] = useState<string[]>([]);
-  const [showSortMenu, setShowSortMenu] = useState(false);
-
-  const currentSortBy = searchParams.get("sortBy") || "date";
-  const currentSortOrder = searchParams.get("sortOrder") || "desc";
 
   // Lock body scroll when mobile overlay is open
   useEffect(() => {
@@ -129,19 +117,10 @@ export default function FilterSidebar({
     );
   };
 
-  const handleSort = (sortBy: string, sortOrder: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("sortBy", sortBy);
-    params.set("sortOrder", sortOrder);
-    router.push(`/?${params.toString()}`);
-    setShowSortMenu(false);
-  };
-
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
 
-    if (q.trim()) params.set("q", q.trim());
     if (minPrice) params.set("minPrice", minPrice);
     if (maxPrice) params.set("maxPrice", maxPrice);
     if (brand) params.set("brand", brand);
@@ -154,9 +133,13 @@ export default function FilterSidebar({
     if (selectedTypes.length > 0)
       params.set("desiredType", selectedTypes.join(","));
 
-    // Preserve sort
-    params.set("sortBy", currentSortBy);
-    params.set("sortOrder", currentSortOrder);
+    // Preserve search and sort from URL
+    const q = searchParams.get("q");
+    const sortBy = searchParams.get("sortBy");
+    const sortOrder = searchParams.get("sortOrder");
+    if (q) params.set("q", q);
+    if (sortBy) params.set("sortBy", sortBy);
+    if (sortOrder) params.set("sortOrder", sortOrder);
 
     const qs = params.toString();
     router.push(qs ? `/?${qs}` : "/");
@@ -164,7 +147,6 @@ export default function FilterSidebar({
   };
 
   const clearFilters = () => {
-    setQ("");
     setMinPrice("");
     setMaxPrice("");
     setBrand("");
@@ -180,7 +162,6 @@ export default function FilterSidebar({
   };
 
   const hasFilters =
-    q ||
     minPrice ||
     maxPrice ||
     brand ||
@@ -192,83 +173,8 @@ export default function FilterSidebar({
     localization ||
     selectedTypes.length > 0;
 
-  const currentSortLabel =
-    SORT_OPTIONS.find(
-      (o) => o.sortBy === currentSortBy && o.sortOrder === currentSortOrder
-    )?.label || "Data ↓";
-
   const sidebarContent = (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {/* Sort controls (always visible) */}
-      <div>
-        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">
-          Ordenar
-        </label>
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setShowSortMenu(!showSortMenu)}
-            className="w-full flex items-center justify-between gap-1 text-sm text-gray-600 border border-gray-300 rounded px-3 py-1.5 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
-          >
-            {currentSortLabel}
-            <svg
-              className="w-3 h-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </button>
-          {showSortMenu && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setShowSortMenu(false)}
-              />
-              <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1">
-                {SORT_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.label}
-                    type="button"
-                    onClick={() => handleSort(opt.sortBy, opt.sortOrder)}
-                    className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-50 cursor-pointer ${
-                      opt.sortBy === currentSortBy &&
-                      opt.sortOrder === currentSortOrder
-                        ? "font-semibold text-blue-600"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      <hr className="border-gray-200" />
-
-      {/* Search */}
-      <div>
-        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">
-          Busca
-        </label>
-        <input
-          type="text"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
-          placeholder="marca, modelo, título..."
-        />
-      </div>
-
       {/* Price */}
       <div>
         <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">
