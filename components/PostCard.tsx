@@ -35,6 +35,14 @@ export default function PostCard({ post }: { post: CarPost }) {
         <p className="text-xs text-gray-500">
           R$ {post.car.estimatedValue.toLocaleString("pt-BR")}
         </p>
+        {/* Informações adicionais */}
+        <div className="flex gap-2 flex-wrap text-[11px] text-gray-400">
+          {post.car.mileage !== undefined && (
+            <span>📍 {post.car.mileage.toLocaleString()} km</span>
+          )}
+          {post.car.color && <span>🎨 {post.car.color}</span>}
+          {post.car.localization && <span>📍 {post.car.localization}</span>}
+        </div>
         {firstVehicle && (
           <p className="text-xs text-blue-600 font-medium">
             Quer {firstVehicle.vehicleType

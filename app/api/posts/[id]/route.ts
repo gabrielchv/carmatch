@@ -92,6 +92,14 @@ export async function PUT(
     const whatsapp = (formData.get("whatsapp") as string) || undefined;
     const email = (formData.get("email") as string) || undefined;
 
+    // Informações adicionais do carro
+    const mileage = formData.get("mileage") ? Number(formData.get("mileage")) : undefined;
+    const color = (formData.get("color") as string) || undefined;
+    const localization = (formData.get("localization") as string) || undefined;
+
+    // Distância máxima geral (opcional)
+    const maxDistance = formData.get("maxDistance") ? Number(formData.get("maxDistance")) : undefined;
+
     // Vehicle rows
     const vehicleVehicleTypes = formData.getAll("vVehicleType") as string[];
     const vehicleBrands = formData.getAll("vBrand") as string[];
@@ -100,6 +108,8 @@ export async function PUT(
     const vehicleTransmissions = formData.getAll("vTransmission") as string[];
     const vehicleYearMin = formData.getAll("vYearMin") as string[];
     const vehicleYearMax = formData.getAll("vYearMax") as string[];
+    const vehicleMileageMin = formData.getAll("vMileageMin") as string[];
+    const vehicleMileageMax = formData.getAll("vMileageMax") as string[];
     const vehicleCashAdj = formData.getAll("vCashAdj") as string[];
     const vehicleTolerance = formData.getAll("vTolerance") as string[];
     const vehicleFipeBrandId = formData.getAll("vFipeBrandId") as string[];
@@ -119,6 +129,8 @@ export async function PUT(
           cashAdjustmentTolerance: Number(vehicleTolerance[i]) || 0,
           yearMin: vehicleYearMin[i] ? Number(vehicleYearMin[i]) : undefined,
           yearMax: vehicleYearMax[i] ? Number(vehicleYearMax[i]) : undefined,
+          mileageMin: vehicleMileageMin[i] ? Number(vehicleMileageMin[i]) : undefined,
+          mileageMax: vehicleMileageMax[i] ? Number(vehicleMileageMax[i]) : undefined,
           vehicleType: vt as DesiredVehicle["vehicleType"],
         });
         continue;
@@ -133,6 +145,8 @@ export async function PUT(
         transmission: vehicleTransmissions[i]?.trim() || undefined,
         yearMin: vehicleYearMin[i] ? Number(vehicleYearMin[i]) : undefined,
         yearMax: vehicleYearMax[i] ? Number(vehicleYearMax[i]) : undefined,
+        mileageMin: vehicleMileageMin[i] ? Number(vehicleMileageMin[i]) : undefined,
+        mileageMax: vehicleMileageMax[i] ? Number(vehicleMileageMax[i]) : undefined,
         cashAdjustment: Number(vehicleCashAdj[i]) || 0,
         cashAdjustmentTolerance: Number(vehicleTolerance[i]) || 0,
         fipeBrandId: vehicleFipeBrandId[i]?.trim() || undefined,
@@ -177,8 +191,8 @@ export async function PUT(
       ...post,
       title,
       description,
-      car: { brand, model, year, estimatedValue, fipeBrandId, fipeModelCode, fipeYearCode },
-      desiredTrade: { vehicles },
+      car: { brand, model, year, estimatedValue, mileage, color, localization, fipeBrandId, fipeModelCode, fipeYearCode },
+      desiredTrade: { vehicles, maxDistance },
       contactInfo: { whatsapp, email },
       images: [...keepImages, ...newImages],
     };

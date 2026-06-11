@@ -140,7 +140,7 @@ export default function PostDetailPage({
       )}
 
       {/* Dados do carro */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-2">
         <InfoBox label="Marca" value={post.car.brand} />
         <InfoBox label="Modelo" value={post.car.model} />
         <InfoBox label="Ano" value={String(post.car.year)} />
@@ -150,9 +150,25 @@ export default function PostDetailPage({
         />
       </div>
 
+      {/* Informações adicionais do carro */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+        {post.car.mileage !== undefined && (
+          <InfoBox label="Quilometragem" value={`${post.car.mileage.toLocaleString("pt-BR")} km`} />
+        )}
+        {post.car.color && <InfoBox label="Cor" value={post.car.color} />}
+        {post.car.localization && <InfoBox label="Localização" value={post.car.localization} />}
+      </div>
+
       {/* O que ele quer na troca */}
       <section className="border border-gray-200 rounded-lg p-4 mb-6">
         <h2 className="font-semibold text-sm mb-3">Quer trocar por</h2>
+
+        {post.desiredTrade.maxDistance && (
+          <div className="text-xs text-gray-500 mb-3 bg-blue-50 rounded px-3 py-2">
+            🔄 Distância máxima aceita: <strong>{post.desiredTrade.maxDistance} km</strong>
+          </div>
+        )}
+
         <div className="space-y-3">
           {(post.desiredTrade.vehicles || []).map((v: DesiredVehicle, i: number) => (
             <div key={i} className="bg-gray-50 rounded p-3 text-sm">
@@ -166,6 +182,9 @@ export default function PostDetailPage({
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-gray-500">
                 {v.yearMin || v.yearMax ? (
                   <span>Ano: {v.yearMin || "?"} – {v.yearMax || "?"}</span>
+                ) : null}
+                {v.mileageMin || v.mileageMax ? (
+                  <span>Km: {v.mileageMin || "?"} – {v.mileageMax || "?"}</span>
                 ) : null}
                 <span className="text-blue-600 font-medium">
                   {cashPill(v.cashAdjustment, v.cashAdjustmentTolerance)}

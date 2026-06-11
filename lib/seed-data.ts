@@ -238,6 +238,16 @@ export async function seedDatabase(): Promise<{
     // Title auto-generated from FIPE data — never a hardcoded year.
     const title = `${car.brand} ${car.fullModelName} ${car.year}`;
 
+    const SEED_COLORS = ["Branco", "Preto", "Prata", "Azul", "Vermelho", "Cinza"];
+    const SEED_CITIES = [
+      "São Paulo - SP",
+      "São Paulo - SP",
+      "Campinas - SP",
+      "Rio de Janeiro - RJ",
+      "Belo Horizonte - MG",
+      "São Paulo - SP",
+    ];
+
     return {
       id: generateId(),
       userId: users[POST_USER_INDICES[postIndex]].id,
@@ -248,6 +258,9 @@ export async function seedDatabase(): Promise<{
         model: car.fullModelName,
         year: car.year,
         estimatedValue: car.estimatedValue,
+        mileage: 30000 + postIndex * 12000,
+        color: SEED_COLORS[postIndex % SEED_COLORS.length],
+        localization: SEED_CITIES[postIndex % SEED_CITIES.length],
       },
       desiredTrade: { vehicles: [desiredVehicle] },
       contactInfo: {

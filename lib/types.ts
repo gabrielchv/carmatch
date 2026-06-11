@@ -12,6 +12,12 @@ export interface CarDetail {
   model: string;
   year: number;
   estimatedValue: number;
+  /** Vehicle mileage in km */
+  mileage?: number;
+  /** Vehicle exterior color */
+  color?: string;
+  /** Vehicle location (city/state) */
+  localization?: string;
   /** FIPE codes for edit pre-fill */
   fipeBrandId?: string;
   fipeModelCode?: string;
@@ -25,6 +31,9 @@ export interface DesiredVehicle {
   transmission?: string;  // "Automático" | "Manual"
   yearMin?: number;
   yearMax?: number;
+  /** Range of mileage in km (optional) */
+  mileageMin?: number;
+  mileageMax?: number;
   cashAdjustment: number;        // quanto o dono do post paga (+) ou recebe (-)
   cashAdjustmentTolerance: number; // ±tolerância
   /** FIPE codes for edit pre-fill */
@@ -36,6 +45,8 @@ export interface DesiredVehicle {
 
 export interface DesiredTrade {
   vehicles: DesiredVehicle[];
+  /** Maximum distance in km from the vehicle's location (general setting for the post) */
+  maxDistance?: number;
 }
 
 export interface CarPost {

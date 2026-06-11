@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import SearchableSelect, { type SelectOption } from "@/components/SearchableSelect";
 import { parseFipeModels, type VersionOption } from "@/lib/fipe-utils";
+import { BRAZIL_CITIES } from "@/lib/brazil-cities";
 import type { CarPost } from "@/lib/types";
 
 interface VehicleRow {
@@ -21,6 +22,8 @@ interface VehicleRow {
   transmission: string;
   yearMin: string;
   yearMax: string;
+  mileageMin: string;
+  mileageMax: string;
   cashAdj: string;
   tolerance: string;
   // Vehicle type mode (SUV, Caminhonete, Hatch, Sedan)
@@ -33,6 +36,24 @@ const VEHICLE_TYPES = [
   { value: "Caminhonete", label: "Caminhonete" },
   { value: "Hatch", label: "Hatch" },
   { value: "Sedan", label: "Sedan" },
+] as const;
+
+const CAR_COLORS = [
+  { value: "Branco", label: "Branco" },
+  { value: "Preto", label: "Preto" },
+  { value: "Prata", label: "Prata" },
+  { value: "Cinza", label: "Cinza" },
+  { value: "Azul", label: "Azul" },
+  { value: "Vermelho", label: "Vermelho" },
+  { value: "Verde", label: "Verde" },
+  { value: "Marrom", label: "Marrom" },
+  { value: "Bege", label: "Bege" },
+  { value: "Bordeaux", label: "Bordeaux" },
+  { value: "Laranja", label: "Laranja" },
+  { value: "Amarelo", label: "Amarelo" },
+  { value: "Dourado", label: "Dourado" },
+  { value: "Rosa", label: "Rosa" },
+  { value: "Roxo", label: "Roxo" },
 ] as const;
 
 let rowId = 0;
@@ -49,6 +70,8 @@ function freshRow(): VehicleRow {
     transmission: "",
     yearMin: "",
     yearMax: "",
+    mileageMin: "",
+    mileageMax: "",
     cashAdj: "0",
     tolerance: "0",
     isTypeMode: false,
@@ -105,6 +128,14 @@ export default function PostForm({
 
   const [myEstimatedValue, setMyEstimatedValue] = useState("");
   const [myEstimatedValueEdited, setMyEstimatedValueEdited] = useState(false);
+
+  // ───── Informações adicionais do carro ─────
+  const [mileage, setMileage] = useState("");
+  const [color, setColor] = useState("");
+  const [localization, setLocalization] = useState("");
+
+  // ───── Geral: distância máxima ─────
+  const [maxDistance, setMaxDistance] = useState("");
 
   // ───── Veículos desejados ─────
   const [rows, setRows] = useState<VehicleRow[]>([freshRow()]);
@@ -243,6 +274,12 @@ export default function PostForm({
         setMyEstimatedValue(String(data.car.estimatedValue));
         setMyEstimatedValueEdited(true);
 
+        // ── Informações adicionais do carro ──
+        setMileage(String(data.car.mileage ?? ""));
+        setColor(data.car.color ?? "");
+        setLocalization(data.car.localization ?? "");
+        setMaxDistance(String(data.desiredTrade.maxDistance ?? ""));
+
         // ── Veículos desejados ──
         if (data.desiredTrade.vehicles.length > 0) {
           const initializedRows: VehicleRow[] = await Promise.all(
@@ -258,6 +295,8 @@ export default function PostForm({
                 transmission: v.transmission || "",
                 yearMin: v.yearMin !== undefined ? String(v.yearMin) : "",
                 yearMax: v.yearMax !== undefined ? String(v.yearMax) : "",
+                mileageMin: v.mileageMin !== undefined ? String(v.mileageMin) : "",
+                mileageMax: v.mileageMax !== undefined ? String(v.mileageMax) : "",
                 cashAdj: String(v.cashAdjustment),
                 tolerance: String(v.cashAdjustmentTolerance),
                 isTypeMode: !!v.vehicleType,
@@ -572,11 +611,20 @@ export default function PostForm({
       formData.set("fipeModelCode", myVersionModelCode);
       formData.set("fipeYearCode", myYearCode);
 
+      // Informações adicionais do carro
+      formData.set("mileage", mileage);
+      formData.set("color", color);
+      formData.set("localization", localization);
+
+      // Distância máxima geral
+      formData.set("maxDistance", maxDistance);
+
       // Veículos desejados – limpa e recria
       for (const key of [
         "vBrand", "vModel", "vVersion", "vTransmission",
         "vYearMin", "vYearMax", "vCashAdj", "vTolerance",
         "vFipeBrandId", "vFipeVersionCode", "vVehicleType",
+        "vMileageMin", "vMileageMax",
       ]) {
         formData.delete(key);
       }
@@ -602,6 +650,8 @@ export default function PostForm({
         }
         formData.append("vYearMin", r.yearMin);
         formData.append("vYearMax", r.yearMax);
+        formData.append("vMileageMin", r.mileageMin);
+        formData.append("vMileageMax", r.mileageMax);
         formData.append("vCashAdj", r.cashAdj);
         formData.append("vTolerance", r.tolerance);
       }
@@ -786,6 +836,44 @@ export default function PostForm({
         <input type="hidden" name="brand" value={myBrandLabel} />
         <input type="hidden" name="model" value={myVersionFullName} />
         <input type="hidden" name="year" value={myYearNumber} />
+
+        {/* Quilometragem + Cor + Localização */}
+        <div className="grid grid-cols-3 gap-3 pt-2">
+          <div>
+            <label className="block text-sm font-medium mb-1">Quilometragem (km)</label>
+            <input
+              type="number"
+              min="0"
+              value={mileage}
+              onChange={(e) => setMileage(e.target.value)}
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+              placeholder="Ex: 50000"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Cor</label>
+            <select
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 bg-white"
+            >
+              <option value="">Selecione a cor...</option>
+              {CAR_COLORS.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <SearchableSelect
+              label="Localização"
+              placeholder="Selecione sua cidade..."
+              value={localization}
+              options={BRAZIL_CITIES}
+              loading={false}
+              onChange={(opt) => setLocalization(opt?.value || "")}
+            />
+          </div>
+        </div>
       </fieldset>
 
       {/* ─── O que eu quero na troca ─── */}
@@ -796,6 +884,24 @@ export default function PostForm({
           Adicione os carros que você aceitaria na troca, ou selecione um tipo de veículo (SUV, hatch, etc.) para ser mais flexível.
           Cada linha pode ter seu próprio ajuste de grana, ano e tolerância.
         </p>
+
+        {/* Distância máxima geral */}
+        <div className="mb-4 p-3 bg-gray-50 rounded border border-gray-200">
+          <label className="block text-sm font-medium mb-1">
+            Distância máxima para troca (km) <span className="text-gray-400 font-normal">(opcional)</span>
+          </label>
+          <input
+            type="number"
+            min="0"
+            value={maxDistance}
+            onChange={(e) => setMaxDistance(e.target.value)}
+            className="w-full max-w-xs border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+            placeholder="Ex: 100"
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Se preenchido, só mostra matches dentro desta distância da sua localização
+          </p>
+        </div>
 
         {rows.map((r, idx) => {
           const parsed = rowParsed[r.id];
@@ -1002,6 +1108,30 @@ export default function PostForm({
                     onChange={(e) => updateRowField(r.id, "tolerance", e.target.value)}
                     type="number"
                     className="w-full border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Km min / Km max (opcional) */}
+              <div className="grid grid-cols-2 gap-1">
+                <div className="min-w-0">
+                  <label className="block text-[10px] font-medium mb-0.5 text-gray-500 truncate">Km min</label>
+                  <input
+                    value={r.mileageMin}
+                    onChange={(e) => updateRowField(r.id, "mileageMin", e.target.value)}
+                    type="number"
+                    className="w-full border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-blue-500"
+                    placeholder="opcional"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <label className="block text-[10px] font-medium mb-0.5 text-gray-500 truncate">Km max</label>
+                  <input
+                    value={r.mileageMax}
+                    onChange={(e) => updateRowField(r.id, "mileageMax", e.target.value)}
+                    type="number"
+                    className="w-full border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:border-blue-500"
+                    placeholder="opcional"
                   />
                 </div>
               </div>
