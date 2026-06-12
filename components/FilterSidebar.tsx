@@ -28,6 +28,16 @@ const MILEAGE_OPTIONS = [
 
 const VEHICLE_TYPES = ["SUV", "Hatch", "Sedan", "Caminhonete"];
 
+const RANGE_OPTIONS = [
+  { value: "", label: "Distância" },
+  { value: "0", label: "Nesta localização" },
+  { value: "50", label: "Até 50 km" },
+  { value: "100", label: "Até 100 km" },
+  { value: "200", label: "Até 200 km" },
+  { value: "500", label: "Até 500 km" },
+  { value: "-1", label: "Todo o Brasil" },
+];
+
 export default function FilterSidebar({
   isOpen,
   onClose,
@@ -53,6 +63,7 @@ export default function FilterSidebar({
   const [localization, setLocalization] = useState(
     searchParams.get("localization") || ""
   );
+  const [range, setRange] = useState(searchParams.get("range") || "");
   const [selectedTypes, setSelectedTypes] = useState<string[]>(
     searchParams.get("desiredType")?.split(",").filter(Boolean) || []
   );
@@ -162,6 +173,7 @@ export default function FilterSidebar({
     if (mileageMin) params.set("mileageMin", mileageMin);
     if (mileageMax) params.set("mileageMax", mileageMax);
     if (localization.trim()) params.set("localization", localization.trim());
+    if (range && range !== "-1") params.set("range", range);
     if (selectedTypes.length > 0)
       params.set("desiredType", selectedTypes.join(","));
 
@@ -190,6 +202,7 @@ export default function FilterSidebar({
     setMileageMin("");
     setMileageMax("");
     setLocalization("");
+    setRange("");
     setSelectedTypes([]);
     router.push("/");
     onClose?.();
@@ -205,6 +218,7 @@ export default function FilterSidebar({
     mileageMin ||
     mileageMax ||
     localization ||
+    range ||
     selectedTypes.length > 0;
 
   const sidebarContent = (
@@ -340,9 +354,32 @@ export default function FilterSidebar({
         <LocationSelect
           label="Localização"
           value={localization}
-          onChange={(val) => setLocalization(val)}
+          onChange={(val) => {
+            setLocalization(val);
+            if (!val.trim()) setRange("");
+          }}
         />
       </div>
+
+      {/* Range — only visible when a location is selected */}
+      {localization.trim() && (
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">
+            Raio de busca
+          </label>
+          <select
+            value={range}
+            onChange={(e) => setRange(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 bg-white"
+          >
+            {RANGE_OPTIONS.map((opt, i) => (
+              <option key={i} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Desired vehicle type */}
       <div>

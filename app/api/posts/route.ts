@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { generateId, nowISO } from "@/lib/utils";
 import { runMatching } from "@/lib/matching";
 import type { CarPost, DesiredVehicle } from "@/lib/types";
+import { isInProximity, parseLocalization } from "@/lib/location-utils";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -21,6 +22,7 @@ export async function GET(request: Request) {
   const mileageMin = searchParams.get("mileageMin");
   const mileageMax = searchParams.get("mileageMax");
   const localization = searchParams.get("localization")?.toLowerCase();
+  const rangeParam = searchParams.get("range");
   const desiredType = searchParams.get("desiredType")?.toLowerCase();
   const sortBy = searchParams.get("sortBy") || "date";
   const sortOrder = searchParams.get("sortOrder") || "desc";
@@ -71,11 +73,50 @@ export async function GET(request: Request) {
     posts = posts.filter((p) => p.car.mileage !== undefined && p.car.mileage <= Number(mileageMax));
   }
 
-  // Localização
-  if (localization) {
-    posts = posts.filter(
-      (p) => p.car.localization && p.car.localization.toLowerCase().includes(localization)
-    );
+  // Localização com proximidade
+  const localizationRaw = searchParams.get("localization");
+  const range = rangeParam ? Number(rangeParam) : undefined;
+  if (localizationRaw) {
+    const parsed = parseLocalization(localizationRaw);
+    const filterState = parsed.state;
+    const filterCity = parsed.city || null;
+
+    if (filterState) {
+      if (range !== undefined && !isNaN(range)) {
+        // Proximity filtering with range
+        posts = posts.filter((p) => {
+          if (!p.car.localization) return false;
+          return isInProximity(
+            p.car.localization,
+            filterState,
+            filterCity,
+            range
+          );
+        });
+      } else {
+        // No range — exact state+city match (improved over old substring)
+        posts = posts.filter((p) => {
+          if (!p.car.localization) return false;
+          const postParsed = parseLocalization(p.car.localization);
+          if (!postParsed.state) return false;
+          if (postParsed.state !== filterState) return false;
+          // If filter has a city, require exact city match too
+          if (filterCity && postParsed.city) {
+            return (
+              postParsed.city.toLowerCase() === filterCity.toLowerCase()
+            );
+          }
+          return true;
+        });
+      }
+    } else {
+      // Unparseable filter value — fall back to old substring match
+      posts = posts.filter(
+        (p) =>
+          p.car.localization &&
+          p.car.localization.toLowerCase().includes(localization as string)
+      );
+    }
   }
 
   // Tipo de veículo desejado

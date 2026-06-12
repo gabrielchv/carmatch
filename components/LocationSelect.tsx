@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import SearchableSelect, { type SelectOption } from "@/components/SearchableSelect";
 import localitiesData from "@/lib/brazil-localities.json";
+import { parseLocalization } from "@/lib/location-utils";
 
 interface BrazilState {
   name: string;
@@ -19,28 +20,6 @@ const STATE_OPTIONS: SelectOption[] = Object.entries(localities)
     label: `${data.name} (${code})`,
   }))
   .sort((a, b) => a.label.localeCompare(b.label));
-
-/**
- * Parses a localization string into state code and city name.
- * Accepts formats: "City, SP", "SP", "City - SP", ""
- */
-function parseLocalization(value: string): { state: string; city: string } {
-  if (!value) return { state: "", city: "" };
-
-  // Try "City, ST" or "City - ST"
-  const commaMatch = value.match(/^(.+),\s*([A-Z]{2})$/);
-  if (commaMatch) return { city: commaMatch[1].trim(), state: commaMatch[2].toUpperCase() };
-
-  const dashMatch = value.match(/^(.+)\s*-\s*([A-Z]{2})$/);
-  if (dashMatch) return { city: dashMatch[1].trim(), state: dashMatch[2].toUpperCase() };
-
-  // Try just "ST"
-  const stateOnlyMatch = value.match(/^([A-Z]{2})$/);
-  if (stateOnlyMatch) return { state: stateOnlyMatch[1].toUpperCase(), city: "" };
-
-  // Unknown format — treat as city only (shouldn't happen with this component)
-  return { state: "", city: value };
-}
 
 function formatLocalization(state: string, city: string): string {
   if (city && state) return `${city}, ${state}`;

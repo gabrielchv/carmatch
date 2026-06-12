@@ -45,3 +45,6 @@ const REGIONS: Record<string, string> = {
 export function getRegion(uf: string): string | null {
   return REGIONS[uf.toUpperCase()] ?? null;
 }
+
+/** Raw region map, exported for iteration by location-utils. */
+export const REGIONS_MAP = REGIONS;

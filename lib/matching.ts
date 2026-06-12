@@ -3,6 +3,8 @@ import { generateId, nowISO } from "./utils";
 import type { CarPost, Match, DesiredVehicle } from "./types";
 import { createConversationFromMatch } from "./chat";
 import { getRegion } from "./brazil-regions";
+import { parseLocalization } from "./location-utils";
+import { areAdjacent } from "./brazil-adjacency";
 
 /* ─── Score thresholds ─────────────────────────────────────────── */
 
@@ -22,31 +24,6 @@ function inferVehicleType(fipeName: string): string | null {
   if (lower.includes("suv")) return "SUV";
   if (lower.includes("pick-up") || lower.includes("pickup") || lower.includes("caminhonete")) return "Caminhonete";
   return null;
-}
-
-/**
- * Parses a localization string into city and state components.
- * Handles "City, SP", "SP", "City - SP", and empty strings.
- */
-function parseLocalization(loc: string): { city: string; state: string } {
-  if (!loc) return { city: "", state: "" };
-
-  if (loc.includes(",")) {
-    const parts = loc.split(",").map((s) => s.trim());
-    return { city: parts[0], state: parts[1] || "" };
-  }
-
-  if (loc.includes("-")) {
-    const parts = loc.split("-").map((s) => s.trim());
-    return { city: parts[0], state: parts[1] || "" };
-  }
-
-  // Two-letter state code alone e.g. "SP"
-  if (loc.trim().length === 2) {
-    return { city: "", state: loc.trim().toUpperCase() };
-  }
-
-  return { city: loc.trim(), state: "" };
 }
 
 /**
@@ -289,6 +266,8 @@ function calculateCarSimilarity(
       score += 14; // same city
     } else if (locA.state === locB.state) {
       score += 10; // same state
+    } else if (areAdjacent(locA.state, locB.state)) {
+      score += 8; // adjacent states
     } else {
       const regA = getRegion(locA.state);
       const regB = getRegion(locB.state);
