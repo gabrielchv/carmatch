@@ -62,10 +62,9 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    setUser(null);
     setMobileMenuOpen(false);
-    router.push("/");
-    router.refresh();
+    // Force full page reload to clear all client state
+    window.location.href = "/";
   };
 
   const handleOpenChat = () => {
