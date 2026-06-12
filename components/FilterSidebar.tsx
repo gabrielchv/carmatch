@@ -3,7 +3,8 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, FormEvent } from "react";
 import LocationSelect from "@/components/LocationSelect";
-import type { CarPost } from "@/lib/types";
+import SearchableSelect, { type SelectOption } from "@/components/SearchableSelect";
+import { parseFipeModels } from "@/lib/fipe-utils";
 
 const MILEAGE_OPTIONS = [
   { value: "", label: "Km de" },
@@ -56,11 +57,14 @@ export default function FilterSidebar({
     searchParams.get("desiredType")?.split(",").filter(Boolean) || []
   );
 
-  const [allBrands, setAllBrands] = useState<string[]>([]);
-  const [modelsByBrand, setModelsByBrand] = useState<Record<string, string[]>>(
-    {}
-  );
-  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  // FIPE brand options
+  const [brandOptions, setBrandOptions] = useState<SelectOption[]>([]);
+  const [brandOptionsLoading, setBrandOptionsLoading] = useState(true);
+  const [selectedBrandId, setSelectedBrandId] = useState("");
+
+  // FIPE model general-model options
+  const [generalModelOptions, setGeneralModelOptions] = useState<SelectOption[]>([]);
+  const [generalModelsLoading, setGeneralModelsLoading] = useState(false);
 
   // Lock body scroll when mobile overlay is open
   useEffect(() => {
@@ -74,42 +78,70 @@ export default function FilterSidebar({
     };
   }, [isOpen]);
 
-  // Load brands/models from all posts (unfiltered)
+  // Load brands from FIPE API on mount
   useEffect(() => {
-    fetch("/api/posts")
-      .then((r) => r.json())
-      .then((data) => {
-        const posts: CarPost[] = data.posts || [];
-        const brands = [
-          ...new Set(posts.map((p) => p.car.brand).filter(Boolean)),
-        ].sort();
-        setAllBrands(brands);
+    fetch("/api/fipe/brands")
+      .then((r) => {
+        if (!r.ok) throw new Error("Falha ao carregar marcas");
+        return r.json();
+      })
+      .then((data: { codigo: string; nome: string }[]) => {
+        const options = data.map((b) => ({ value: b.codigo, label: b.nome }));
+        setBrandOptions(options);
 
-        const map: Record<string, string[]> = {};
-        for (const p of posts) {
-          if (p.car.brand && p.car.model) {
-            if (!map[p.car.brand]) map[p.car.brand] = [];
-            if (!map[p.car.brand].includes(p.car.model)) {
-              map[p.car.brand].push(p.car.model);
-            }
+        // Se a URL já tem uma marca selecionada, encontrar o código FIPE
+        const urlBrand = searchParams.get("brand");
+        if (urlBrand) {
+          const match = options.find(
+            (o) => o.label.toLowerCase() === urlBrand.toLowerCase()
+          );
+          if (match) {
+            setSelectedBrandId(match.value);
+            setBrand(match.label);
           }
         }
-        for (const key of Object.keys(map)) {
-          map[key].sort();
-        }
-        setModelsByBrand(map);
       })
-      .catch(() => {});
-  }, []);
+      .catch(() => {})
+      .finally(() => setBrandOptionsLoading(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Update available models when brand changes
+  // Load general models from FIPE when brand changes
   useEffect(() => {
-    if (brand && modelsByBrand[brand]) {
-      setAvailableModels(modelsByBrand[brand]);
-    } else {
-      setAvailableModels([]);
+    if (!selectedBrandId) {
+      setGeneralModelOptions([]);
+      return;
     }
-  }, [brand, modelsByBrand]);
+
+    setGeneralModelsLoading(true);
+    setGeneralModelOptions([]);
+
+    fetch(`/api/fipe/models?brandId=${selectedBrandId}`)
+      .then((r) => {
+        if (!r.ok) throw new Error("Falha ao carregar modelos");
+        return r.json();
+      })
+      .then((data) => {
+        const parsed = parseFipeModels(data);
+        const options = parsed.generalModels.map((gm) => ({
+          value: gm,
+          label: gm,
+        }));
+        setGeneralModelOptions(options);
+
+        // Se a URL já tem um modelo selecionado, verificar se é válido
+        const urlModel = searchParams.get("model");
+        if (
+          urlModel &&
+          options.some((o) => o.value.toLowerCase() === urlModel.toLowerCase())
+        ) {
+          setModel(urlModel);
+        }
+      })
+      .catch(() => {
+        setGeneralModelOptions([]);
+      })
+      .finally(() => setGeneralModelsLoading(false));
+  }, [selectedBrandId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTypeToggle = (type: string) => {
     setSelectedTypes((prev) =>
@@ -151,6 +183,8 @@ export default function FilterSidebar({
     setMaxPrice("");
     setBrand("");
     setModel("");
+    setSelectedBrandId("");
+    setGeneralModelOptions([]);
     setYearMin("");
     setYearMax("");
     setMileageMin("");
@@ -203,48 +237,42 @@ export default function FilterSidebar({
 
       {/* Brand */}
       <div>
-        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">
-          Marca
-        </label>
-        <select
-          value={brand}
-          onChange={(e) => {
-            setBrand(e.target.value);
-            setModel("");
+        <SearchableSelect
+          label="Marca"
+          placeholder="Todas as marcas"
+          value={selectedBrandId}
+          options={brandOptions}
+          loading={brandOptionsLoading}
+          onChange={(opt) => {
+            if (opt) {
+              setSelectedBrandId(opt.value);
+              setBrand(opt.label);
+              setModel("");
+              setGeneralModelOptions([]);
+            } else {
+              setSelectedBrandId("");
+              setBrand("");
+              setModel("");
+              setGeneralModelOptions([]);
+            }
           }}
-          className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-500 bg-white"
-        >
-          <option value="">Todas as marcas</option>
-          {allBrands.map((b) => (
-            <option key={b} value={b}>
-              {b}
-            </option>
-          ))}
-        </select>
+          disabled={false}
+        />
       </div>
 
       {/* Model */}
       <div>
-        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">
-          Modelo
-        </label>
-        <select
+        <SearchableSelect
+          label="Modelo"
+          placeholder={selectedBrandId ? "Todos os modelos" : "Selecione uma marca"}
           value={model}
-          onChange={(e) => setModel(e.target.value)}
-          disabled={!brand}
-          className={`w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-500 bg-white ${
-            !brand ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-        >
-          <option value="">
-            {brand ? "Todos os modelos" : "Selecione uma marca"}
-          </option>
-          {availableModels.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
+          options={generalModelOptions}
+          loading={generalModelsLoading}
+          onChange={(opt) => {
+            setModel(opt?.value || "");
+          }}
+          disabled={!selectedBrandId}
+        />
       </div>
 
       <hr className="border-gray-200" />

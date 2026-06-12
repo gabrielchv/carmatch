@@ -1,1 +1,3 @@
-- improve score algorithm
+- if the user select a location (state and/or city), they can also select a range, so depending on the range, it will show near cities or states (think of a very smart, efficient yet effective way to implement this, that would work as expected)
+- change mileage icon on posts for something that makes more sense
+- place a chat button directly on the post preview
